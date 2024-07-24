@@ -1,3 +1,5 @@
+use synth_jxrs;
+
 fn main() {
-    println!("Hello, world!");
+    synth_jxrs::build().unwrap();
 }
