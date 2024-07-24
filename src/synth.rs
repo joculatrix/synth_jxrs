@@ -133,7 +133,7 @@ where
 {
     for frame in output.chunks_mut(channels) {
         clock.tick();
-        let value: T = T::from_sample(0.25 * osc[0].calc(clock));
+        let value: T = T::from_sample(0.0025 * osc[0].calc(clock));
         for sample in frame.iter_mut() {
             *sample = value;
         }
