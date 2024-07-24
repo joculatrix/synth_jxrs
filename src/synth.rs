@@ -21,7 +21,7 @@ impl Waveform {
             // sin(2πfx)
             // 
             // Where f is the frequency of the wave, and x is the current time. In this implementation,
-            // x is represented as the variable "delta".
+            // x is represented by a clock which keeps track of the current tick as well as the sample rate.
             Waveform::Sine => (freq * 2.0 * PI * clock.clock / clock.sample_rate).sin(),
             // A square wave is just a sine wave quantized to binary amplitude values of either 1 or -1.
             // Thus, just calculate it as if it were a sine wave, and then turn it into an if-else.
@@ -96,7 +96,7 @@ where
     let channels = config.channels as usize;
 
     let mut osc = vec![];
-    osc.push(Oscillator{ frequency: 440.0, waveform: Waveform::Sine });
+    osc.push(Oscillator{ frequency: 440.0, waveform: Waveform::Square });
 
     let stream = device.build_output_stream(
         config,
