@@ -1,7 +1,8 @@
 use std::fmt::Display;
-
 use super::*;
-use cpal::{traits::{DeviceTrait, HostTrait, StreamTrait}, FromSample, Sample, SizedSample};
+
+use cpal::{traits::{DeviceTrait, HostTrait, StreamTrait}, FromSample, SizedSample};
+use rand::{self, Rng};
 
 pub enum Waveform {
     Noise,
@@ -12,21 +13,36 @@ pub enum Waveform {
 }
 
 impl Waveform {
-    fn calc(&self, clock: &SampleClock, freq: f64) -> f64 {
+    fn calc(&self, delta: f64, freq: f64) -> f64 {
         match self {
-            Waveform::Noise => todo!(),
-            Waveform::Saw => todo!(),
+            // White noise, generated via random amplitudes between -1.0 and 1.0.
+            Waveform::Noise => rand::thread_rng().gen::<f64>() * 2.0 - 1.0,
+            // Approximation of a sawtooth wave using the first 40 harmonics of a sine wave:
+            //
+            // for n=[2..=40], f(n) = 2 * (g(n-1) + sin(n * 2πfx)) / π
+            // g(n) = g(n-1) + sin(n * 2πfx)
+            // g(1) = sin(2πfx)
+            //
+            // This is far from the fastest way to approximate this wave. Consider replacing or
+            // having two versions of the sawtooth.
+            Waveform::Saw => {
+                let mut res = 0.0f64;
+                for i in 1..=40 {
+                    res += Waveform::Sine.calc(delta, i as f64 * freq);
+                }
+                res * (2.0 / PI)
+            },
             // The amplitude of a sine wave at a given instant can be calculated by the function:
             // 
             // sin(2πfx)
             // 
             // Where f is the frequency of the wave, and x is the current time. In this implementation,
-            // x is represented by a clock which keeps track of the current tick as well as the sample rate.
-            Waveform::Sine => (freq * 2.0 * PI * clock.clock / clock.sample_rate).sin(),
+            // x is represented by "delta".
+            Waveform::Sine => (freq * 2.0 * PI * delta).sin(),
             // A square wave is just a sine wave quantized to binary amplitude values of either 1 or -1.
             // Thus, just calculate it as if it were a sine wave, and then turn it into an if-else.
-            Waveform::Square => if Waveform::Sine.calc(clock, freq) > 0.0 { 1.0 } else { -1.0 },
-            Waveform::Triangle => todo!(),
+            Waveform::Square => if Waveform::Sine.calc(delta, freq) > 0.0 { 1.0 } else { -1.0 },
+            Waveform::Triangle => (Waveform::Sine.calc(delta, freq)).asin() * (2.0 / PI),
         }
     }
 }
@@ -38,7 +54,7 @@ pub struct Oscillator {
 
 impl Oscillator {
     fn calc(&self, clock: &SampleClock) -> f64 {
-        self.waveform.calc(clock, self.frequency)
+        self.waveform.calc(clock.clock / clock.sample_rate, self.frequency)
     }
 }
 
@@ -96,7 +112,7 @@ where
     let channels = config.channels as usize;
 
     let mut osc = vec![];
-    osc.push(Oscillator{ frequency: 440.0, waveform: Waveform::Square });
+    osc.push(Oscillator{ frequency: 440.0, waveform: Waveform::Saw });
 
     let stream = device.build_output_stream(
         config,
@@ -117,7 +133,7 @@ where
 {
     for frame in output.chunks_mut(channels) {
         clock.tick();
-        let value: T = T::from_sample(osc[0].calc(clock));
+        let value: T = T::from_sample(0.25 * osc[0].calc(clock));
         for sample in frame.iter_mut() {
             *sample = value;
         }
