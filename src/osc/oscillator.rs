@@ -23,10 +23,12 @@ impl Oscillator {
         let mut frequency = self.frequency;
         let res = self.waveform.get_sample(self.phase);
 
+        // for frequency modulation
         if let Some(ref mut osc) = &mut self.fm {
             frequency += (self.fm_range / 2) as f64 * osc.calc();
         }
 
+        // iterate to next sample
         unsafe {
             let table_length = TABLE_LENGTH as f64;
 

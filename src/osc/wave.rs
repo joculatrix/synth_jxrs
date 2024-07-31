@@ -10,6 +10,12 @@ pub enum Waveform {
 }
 
 impl Waveform {
+    /// Generates a sample of the wave amplitude for a given point in time. Currently,
+    /// this is used in [`osc::init_tables()`] to produce a single cycle of each wave shape
+    /// for the samples to later be referenced by [`Oscillator`]s as needed.
+    /// 
+    /// ['osc::init_tables()`]: super::init_tables
+    /// [`Oscillator`]:         super::oscillator::Oscillator
     pub fn calc(&self, delta: f64, freq: f64) -> f64 {
         match self {
             // White noise, generated via random amplitudes between -1.0 and 1.0.
@@ -38,6 +44,7 @@ impl Waveform {
         }
     }
 
+    /// Retrieve the appropriate sample from the lookup table.
     pub fn get_sample(&self, phase: f64) -> f64 {
         let i = phase as usize;
 
