@@ -1,9 +1,12 @@
-use std::f64::consts::PI;
 use cpal::Host;
 
+pub mod osc;
 pub mod synth;
 
 pub use synth::build;
+
+use osc::oscillator::Oscillator;
+use osc::wave::Waveform;
 
 fn get_host() -> Host {
     cpal::default_host()
