@@ -1,4 +1,4 @@
-use std::{f64::consts::PI, ptr::addr_of};
+use std::f64::consts::PI;
 use rand::{self, Rng};
 
 pub enum Waveform {

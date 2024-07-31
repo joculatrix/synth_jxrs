@@ -3,25 +3,6 @@ use super::*;
 
 use cpal::{traits::{DeviceTrait, HostTrait, StreamTrait}, FromSample, SizedSample};
 
-struct SampleClock {
-    sample_rate: f64,
-    clock: f64,
-}
-
-impl SampleClock {
-    fn new(sample_rate: f64) -> SampleClock {
-        SampleClock {
-            sample_rate,
-            clock: 0.0,
-        }
-    }
-
-    fn tick(&mut self) -> f64 {
-        self.clock = (self.clock + 1.0) % self.sample_rate;
-
-        self.clock / self.sample_rate
-    }
-}
 
 pub fn build() -> Result<(), &'static str> {
     let host = get_host();
