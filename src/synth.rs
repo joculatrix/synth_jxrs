@@ -54,19 +54,22 @@ fn run<T>(device: &cpal::Device, config: &cpal::StreamConfig)
 where
     T: SizedSample + FromSample<f64> + Display,
 {
-    let sample_rate = config.sample_rate.0 as f64;
-    let mut clock = SampleClock::new(sample_rate);
+    unsafe {
+        super::SAMPLE_RATE = config.sample_rate.0 as f64;
+    }
+
+    init_tables();
+
     let channels = config.channels as usize;
 
-    let osc1 = Oscillator::new(100.0, Waveform::Sine);
+    let osc1 = Oscillator::new(20.0, Waveform::Sine);
     let mut osc = Oscillator::new(440.0, Waveform::Sine);
     osc.set_fm(Some(osc1));
-    osc.set_fm_range(100);
 
     let stream = device.build_output_stream(
         config,
         move |data: &mut [T], _: &cpal::OutputCallbackInfo| {
-            output(data, channels, &mut clock, &osc)
+            output(data, channels, &mut osc)
         },
         |err| eprintln!("Stream error: {}", err),
         None,
@@ -76,13 +79,12 @@ where
     std::thread::sleep(std::time::Duration::from_millis(5000));
 }
 
-fn output<T>(output: &mut [T], channels: usize, clock: &mut SampleClock, osc: &Oscillator)
+fn output<T>(output: &mut [T], channels: usize, osc: &mut Oscillator)
 where
     T: SizedSample + FromSample<f64> + Display
 {
     for frame in output.chunks_mut(channels) {
-        let delta = clock.tick();
-        let value: T = T::from_sample(0.75 * osc.calc(delta));
+        let value: T = T::from_sample(0.75 * osc.calc());
         for sample in frame.iter_mut() {
             *sample = value;
         }

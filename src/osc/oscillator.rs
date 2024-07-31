@@ -1,9 +1,10 @@
-use super::wave::Waveform;
+use super::{wave::Waveform, *};
 
 pub struct Oscillator {
     fm: Option<Box<Oscillator>>,
     fm_range: u16,
     frequency: f64,
+    phase: f64,
     waveform: Waveform,
 }
 
@@ -13,17 +14,31 @@ impl Oscillator {
             fm: None,
             fm_range: 100,
             frequency,
+            phase: 0.0,
             waveform
         }
     }
 
-    pub fn calc(&self, delta: f64) -> f64 {
-        if let Some(osc) = &self.fm {
-            let frequency = self.frequency + ((self.fm_range / 2) as f64 * osc.calc(delta));
-            self.waveform.calc(delta, frequency)
-        } else {
-            self.waveform.calc(delta, self.frequency)
+    pub fn calc(&mut self) -> f64 {
+        let mut frequency = self.frequency;
+        let res = self.waveform.get_sample(self.phase);
+
+        if let Some(ref mut osc) = &mut self.fm {
+            frequency += (self.fm_range / 2) as f64 * osc.calc();
         }
+
+        unsafe {
+            let table_length = TABLE_LENGTH as f64;
+
+            self.phase +=
+                frequency * table_length / crate::SAMPLE_RATE;
+            
+            if self.phase >= table_length as f64 {
+                self.phase -= table_length as f64;
+            }
+        }
+
+        res
     }
 
     pub fn set_fm(&mut self, osc: Option<Oscillator>) {

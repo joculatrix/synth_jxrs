@@ -5,8 +5,11 @@ pub mod synth;
 
 pub use synth::build;
 
+use osc::init_tables;
 use osc::oscillator::Oscillator;
 use osc::wave::Waveform;
+
+static mut SAMPLE_RATE: f64 = 48000.0;
 
 fn get_host() -> Host {
     cpal::default_host()

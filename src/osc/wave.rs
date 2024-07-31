@@ -1,4 +1,4 @@
-use std::f64::consts::PI;
+use std::{f64::consts::PI, ptr::addr_of};
 use rand::{self, Rng};
 
 pub enum Waveform {
@@ -17,9 +17,6 @@ impl Waveform {
             // Approximation of a sawtooth wave using the first 40 harmonics of a sine wave:
             //
             // f(n) = 2 * (sin(1 * 2πfx) + sin(2 * 2πfx) + sin(3 * 2πfx) + ... + sin(n * 2πfx)) / π
-            //
-            // This is far from the fastest way to approximate this wave. Consider replacing or
-            // having two versions of the sawtooth.
             Waveform::Saw => {
                 let mut res = 0.0f64;
                 for i in 1..=40 {
@@ -39,5 +36,19 @@ impl Waveform {
             Waveform::Square => if Waveform::Sine.calc(delta, freq) > 0.0 { 1.0 } else { -1.0 },
             Waveform::Triangle => (Waveform::Sine.calc(delta, freq)).asin() * (2.0 / PI),
         }
+    }
+
+    pub fn get_sample(&self, phase: f64) -> f64 {
+        let i = phase as usize;
+
+        unsafe {
+            match self {
+                Waveform::Noise => super::NOISE_TABLE[i],
+                Waveform::Saw => super::SAW_TABLE[i],
+                Waveform::Sine => super::SINE_TABLE[i],
+                Waveform::Square => super::SQUARE_TABLE[i],
+                Waveform::Triangle => super::TRI_TABLE[i],
+            }
+        } 
     }
 }
