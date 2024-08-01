@@ -1,4 +1,5 @@
 // use statements for in-library use:
+use std::f64::consts::PI;
 use cpal::Host;
 use osc::init_tables;
 use osc::oscillator::Oscillator;
@@ -6,6 +7,7 @@ use osc::wave::Waveform;
 
 // modules:
 mod amp;
+mod filter;
 mod mixer;
 mod osc;
 mod synth;

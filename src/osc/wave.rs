@@ -1,5 +1,7 @@
-use std::f64::consts::PI;
+use crate::PI;
 use rand::{self, Rng};
+
+static SAW_HARMONIC_COUNT: usize = 40;
 
 pub enum Waveform {
     Noise,
@@ -25,7 +27,7 @@ impl Waveform {
             // f(n) = 2 * (sin(1 * 2πfx) + sin(2 * 2πfx) + sin(3 * 2πfx) + ... + sin(n * 2πfx)) / π
             Waveform::Saw => {
                 let mut res = 0.0f64;
-                for i in 1..=40 {
+                for i in 1..=SAW_HARMONIC_COUNT {
                     res += Waveform::Sine.calc(delta, i as f64 * freq);
                 }
                 res * (2.0 / PI)

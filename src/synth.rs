@@ -37,9 +37,8 @@ where
 {
     unsafe {
         super::SAMPLE_RATE = config.sample_rate.0 as f64;
+        init_tables();
     }
-
-    init_tables();
 
     let channels = config.channels as usize;
 
