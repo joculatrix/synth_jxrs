@@ -41,7 +41,7 @@ where
 {
     unsafe {
         super::SAMPLE_RATE = config.sample_rate.0 as f64;
-        SAMPS_PER_SCOPE = app::OSC_LEN / SAMPLE_RATE as u32;
+        SAMPS_PER_SCOPE = app::SCOPE_LEN / SAMPLE_RATE as u32;
         osc::init_tables();
     }
 
