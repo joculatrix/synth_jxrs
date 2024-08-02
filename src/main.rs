@@ -5,7 +5,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 use app::App;
-use cpal::Host;
+use cpal::{Host, Stream};
 use message::Message;
 use osc::oscillator::Oscillator;
 use ratatui::{crossterm::{
@@ -40,7 +40,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut app = App::new();
     let tx2 = tx.clone();
     let handle = tokio::spawn(async move {
-        synth::build(tx2).unwrap();
+        synth::build(tx2).await.unwrap();
     });
 
     run_app(&mut terminal, app, tx).await?;
@@ -72,6 +72,7 @@ async fn run_app(
                 Message::Sample(i, samp) => {
                     app.lock().unwrap().update_osc_data(i, samp);
                 }
+                Message::Quit() => break,
             }
             Err(RecvError::Lagged(_)) => (),
             Err(e) => break,
@@ -87,7 +88,10 @@ async fn run_app(
         if event::poll(std::time::Duration::from_millis(16))? {
             if let event::Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
-                    break;
+                    match tx.send(Message::Quit()) {
+                        Ok(_) => break,
+                        Err(_) => panic!(),
+                    }
                 }
             }
         }
@@ -101,6 +105,7 @@ async fn run_app(
 fn get_host() -> Host {
     cpal::default_host()
 }
+
 
 #[cfg(test)]
 mod tests {

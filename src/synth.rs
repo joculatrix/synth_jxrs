@@ -7,8 +7,14 @@ use tokio::sync::broadcast::Sender;
 
 static mut SAMPS_PER_SCOPE: u32 = 0;
 
+struct StreamWrapper {
+    stream: Stream,
+}
 
-pub fn build(tx: Sender<Message>) -> Result<(), &'static str> {
+unsafe impl Send for StreamWrapper { }
+
+
+pub async fn build(tx: Sender<Message>) -> Result<(), &'static str> {
     let host = get_host();
     let Some(device) = host.default_output_device() else {
         return Err("Failed to identify an output device.");
@@ -19,23 +25,23 @@ pub fn build(tx: Sender<Message>) -> Result<(), &'static str> {
     // println!("Output config: {:?}", config);
 
     match config.sample_format() {
-        cpal::SampleFormat::I8 => run::<i8>(&device, &config.into(), tx),
-        cpal::SampleFormat::I16 => run::<i16>(&device, &config.into(), tx),
-        cpal::SampleFormat::I32 => run::<i32>(&device, &config.into(), tx),
-        cpal::SampleFormat::I64 => run::<i64>(&device, &config.into(), tx),
-        cpal::SampleFormat::U8 => run::<u8>(&device, &config.into(), tx),
-        cpal::SampleFormat::U16 => run::<u16>(&device, &config.into(), tx),
-        cpal::SampleFormat::U32 => run::<u32>(&device, &config.into(), tx),
-        cpal::SampleFormat::U64 => run::<u64>(&device, &config.into(), tx),
-        cpal::SampleFormat::F32 => run::<f32>(&device, &config.into(), tx),
-        cpal::SampleFormat::F64 => run::<f64>(&device, &config.into(), tx),
+        cpal::SampleFormat::I8 => run::<i8>(&device, &config.into(), tx).await,
+        cpal::SampleFormat::I16 => run::<i16>(&device, &config.into(), tx).await,
+        cpal::SampleFormat::I32 => run::<i32>(&device, &config.into(), tx).await,
+        cpal::SampleFormat::I64 => run::<i64>(&device, &config.into(), tx).await,
+        cpal::SampleFormat::U8 => run::<u8>(&device, &config.into(), tx).await,
+        cpal::SampleFormat::U16 => run::<u16>(&device, &config.into(), tx).await,
+        cpal::SampleFormat::U32 => run::<u32>(&device, &config.into(), tx).await,
+        cpal::SampleFormat::U64 => run::<u64>(&device, &config.into(), tx).await,
+        cpal::SampleFormat::F32 => run::<f32>(&device, &config.into(), tx).await,
+        cpal::SampleFormat::F64 => run::<f64>(&device, &config.into(), tx).await,
         _ => todo!(),
     }
 
     Ok(())
 }
 
-fn run<T>(device: &cpal::Device, config: &cpal::StreamConfig, tx: Sender<Message>)
+async fn run<T>(device: &cpal::Device, config: &cpal::StreamConfig, tx: Sender<Message>)
 where
     T: SizedSample + FromSample<f64> + Display,
 {
@@ -51,6 +57,8 @@ where
 
     let mut samps_iter = 0;
 
+    let mut rx = tx.subscribe();
+
     let stream = device.build_output_stream(
         config,
         move |data: &mut [T], _: &cpal::OutputCallbackInfo| {
@@ -59,9 +67,17 @@ where
         |err| eprintln!("Stream error: {}", err),
         None,
     ).unwrap();
-    stream.play().unwrap();
 
-    std::thread::sleep(std::time::Duration::from_millis(5000));
+    let stream = StreamWrapper{ stream };
+
+    stream.stream.play().unwrap();
+
+    loop { tokio::select! {
+        Ok(Message::Quit()) = rx.recv() => {
+            return;
+        }
+        else => { }
+    }}
 }
 
 fn output<T>(
