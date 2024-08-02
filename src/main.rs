@@ -1,9 +1,19 @@
-// use statements for in-library use:
-use std::f64::consts::PI;
+use std::{
+    error::Error,
+    f64::consts::PI,
+    io::{self, Stdout},
+    sync::{Arc, Mutex},
+};
+use app::App;
 use cpal::Host;
-use osc::init_tables;
+use message::Message;
 use osc::oscillator::Oscillator;
-use osc::wave::Waveform;
+use ratatui::{crossterm::{
+    event::{self, DisableMouseCapture, EnableMouseCapture, KeyCode, KeyEventKind},
+    execute,
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+}, prelude::CrosstermBackend, Terminal};
+use tokio::sync::broadcast::{self, error::RecvError, Receiver, Sender};
 
 // modules:
 mod amp;
@@ -18,8 +28,68 @@ mod ui;
 // statics:
 static mut SAMPLE_RATE: f64 = 48000.0;
 
-fn main() {
-    synth::build().unwrap();
+#[tokio::main(flavor = "multi_thread")]
+async fn main() -> Result<(), Box<dyn Error>> {
+    let (tx, _rx) = broadcast::channel(10);
+
+    enable_raw_mode()?;
+    execute!(io::stdout(), EnterAlternateScreen, EnableMouseCapture)?;
+    let backend = CrosstermBackend::new(io::stdout());
+    let mut terminal = Terminal::new(backend)?;
+
+    let mut app = App::new();
+    let tx2 = tx.clone();
+    let handle = tokio::spawn(async move {
+        synth::build(tx2).unwrap();
+    });
+
+    run_app(&mut terminal, app, tx).await?;
+    handle.await?;
+
+    disable_raw_mode()?;
+    execute!(
+        terminal.backend_mut(),
+        LeaveAlternateScreen,
+        DisableMouseCapture
+    )?;
+    terminal.show_cursor()?;
+    
+    Ok(())
+}
+
+async fn run_app(
+    terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+    app: App,
+    tx: Sender<Message>
+) -> Result<(), Box<dyn Error>> {
+    let mut rx = tx.subscribe();
+    let app = Arc::new(Mutex::new(app));
+    let ui_app_ref = Arc::clone(&app);
+
+    let handle = tokio::spawn(async move { loop {
+        match rx.recv().await {
+            Ok(msg) => match msg {
+                Message::Sample(i, samp) => {
+                    app.lock().unwrap().update_osc_data(i, samp);
+                }
+            }
+            Err(RecvError::Lagged(_)) => (),
+            Err(e) => break,
+        }
+    }});
+
+    loop {
+        terminal.draw(|f| ui::ui(f, *ui_app_ref.lock().unwrap()))?;
+        if let event::Event::Key(key) = event::read()? {
+            if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
+                break;
+            }
+        }
+    }
+
+    handle.await?;
+
+    Ok(())
 }
 
 fn get_host() -> Host {

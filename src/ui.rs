@@ -1,3 +1,5 @@
+use std::sync::{Arc, Mutex};
+
 use ratatui::{
     style::{Style, Stylize},
     widgets::{Block, Sparkline},
@@ -6,7 +8,7 @@ use ratatui::{
 
 use crate::app::App;
 
-pub fn ui(f: &mut Frame, app: &App) {
+pub fn ui(f: &mut Frame<'_>, app: App) {
     let osc_data = &app.osc_data(0);
 
     let oscilloscope = Sparkline::default()

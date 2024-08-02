@@ -4,18 +4,20 @@ pub struct Oscillator {
     fm: Option<Box<Oscillator>>,
     fm_range: u16,
     frequency: f64,
+    id: usize,
     phase: f64,
     waveform: Waveform,
 }
 
 impl Oscillator {
-    pub fn new(frequency: f64, waveform: Waveform) -> Oscillator {
+    pub fn new(id: usize) -> Oscillator {
         Oscillator {
             fm: None,
             fm_range: 100,
-            frequency,
+            frequency: 440.0,
+            id,
             phase: 0.0,
-            waveform
+            waveform: Waveform::Sine,
         }
     }
 
