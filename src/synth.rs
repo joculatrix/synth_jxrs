@@ -13,10 +13,10 @@ pub fn build(tx: Sender<Message>) -> Result<(), &'static str> {
     let Some(device) = host.default_output_device() else {
         return Err("Failed to identify an output device.");
     };
-    println!("Output device: {}", device.name().unwrap());
+    // println!("Output device: {}", device.name().unwrap());
 
     let config = device.default_output_config().unwrap();
-    println!("Output config: {:?}", config);
+    // println!("Output config: {:?}", config);
 
     match config.sample_format() {
         cpal::SampleFormat::I8 => run::<i8>(&device, &config.into(), tx),
@@ -41,7 +41,7 @@ where
 {
     unsafe {
         super::SAMPLE_RATE = config.sample_rate.0 as f64;
-        SAMPS_PER_SCOPE = 1024 / SAMPLE_RATE as u32;
+        SAMPS_PER_SCOPE = app::OSC_LEN / SAMPLE_RATE as u32;
         osc::init_tables();
     }
 

@@ -79,10 +79,16 @@ async fn run_app(
     }});
 
     loop {
-        terminal.draw(|f| ui::ui(f, *ui_app_ref.lock().unwrap()))?;
-        if let event::Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
-                break;
+        {
+            let mut app = ui_app_ref.lock().unwrap();
+            let data = app.osc_data(0);
+            terminal.draw(|f| ui::ui(f, data))?;
+        }
+        if event::poll(std::time::Duration::from_millis(16))? {
+            if let event::Event::Key(key) = event::read()? {
+                if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
+                    break;
+                }
             }
         }
     }
