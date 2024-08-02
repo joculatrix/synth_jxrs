@@ -8,12 +8,10 @@ use ratatui::{
 
 use crate::app::App;
 
-pub fn ui(f: &mut Frame<'_>, app: App) {
-    let osc_data = &app.osc_data(0);
-
+pub fn ui(f: &mut Frame<'_>, data: &[u64]) {
     let oscilloscope = Sparkline::default()
         .block(Block::bordered())
-        .data(osc_data)
+        .data(data)
         .max(100)
         .style(Style::default().blue().on_black());
 
