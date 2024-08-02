@@ -5,7 +5,7 @@ use tokio::sync::broadcast::{Sender, Receiver};
 
 use crate::message::{Channel, Message};
 
-pub const OSC_LEN: u32 = 1024;
+pub const SCOPE_LEN: u32 = 128;
 
 #[derive(Clone)]
 pub struct App {
@@ -15,7 +15,7 @@ pub struct App {
 impl App {
     pub fn new() -> App {
         let mut vec = VecDeque::new();
-        for _ in 0..=OSC_LEN {
+        for _ in 0..=SCOPE_LEN {
             vec.push_back(0);
         }
 
