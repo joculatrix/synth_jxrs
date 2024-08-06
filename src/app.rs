@@ -3,29 +3,30 @@ use std::collections::VecDeque;
 
 use tokio::sync::broadcast::{Sender, Receiver};
 
-use crate::message::{Channel, Message};
+use crate::{message::{Channel, Message}, synth};
 
-pub const SCOPE_LEN: u32 = 128;
+pub const SCOPE_LEN: usize = 128;
 
 #[derive(Clone)]
 pub struct App {
-    osc_data: [VecDeque<u64>; 1],
+    osc_data: [VecDeque<u64>; synth::NUM_OSCS],
 }
 
 impl App {
     pub fn new() -> App {
-        let mut vec = VecDeque::new();
-        for _ in 0..=SCOPE_LEN {
-            vec.push_back(0);
-        }
+        let mut vecs = core::array::from_fn(|_|
+            VecDeque::with_capacity(SCOPE_LEN)
+        );
+        vecs.iter_mut().for_each(|v| v.resize(SCOPE_LEN, 0));
 
         App {
-            osc_data: [vec],
+            osc_data: vecs,
         }
     }
 
     pub fn osc_data(&mut self, osc: usize) -> &[u64] {
-        self.osc_data[osc].make_contiguous()
+        self.osc_data[osc].make_contiguous();
+        self.osc_data[osc].as_slices().0
     }
 
     pub fn update_osc_data(&mut self, osc: usize, sample: f64) {

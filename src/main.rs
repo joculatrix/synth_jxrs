@@ -37,7 +37,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let backend = CrosstermBackend::new(io::stdout());
     let mut terminal = Terminal::new(backend)?;
 
-    let mut app = App::new();
+    let app = App::new();
     let tx2 = tx.clone();
     let handle = tokio::spawn(async move {
         synth::build(tx2).await.unwrap();
@@ -69,6 +69,7 @@ async fn run_app(
     let handle = tokio::spawn(async move { loop {
         match rx.recv().await {
             Ok(msg) => match msg {
+                Message::Freq(_, _) => {}
                 Message::Sample(i, samp) => {
                     app.lock().unwrap().update_osc_data(i, samp);
                 }
@@ -82,8 +83,7 @@ async fn run_app(
     loop {
         {
             let mut app = ui_app_ref.lock().unwrap();
-            let data = app.osc_data(0);
-            terminal.draw(|f| ui::ui(f, data))?;
+            terminal.draw(|f| ui::ui(f, &mut app))?;
         }
         if event::poll(std::time::Duration::from_millis(16))? {
             if let event::Event::Key(key) = event::read()? {

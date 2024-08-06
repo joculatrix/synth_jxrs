@@ -56,4 +56,8 @@ impl Oscillator {
     pub fn set_fm_range(&mut self, range: u16) {
         self.fm_range = range;
     }
+
+    pub fn set_freq(&mut self, freq: f64) {
+        self.frequency = freq;
+    }
 }

@@ -5,6 +5,7 @@ use cpal::{traits::{DeviceTrait, HostTrait, StreamTrait}, FromSample, SizedSampl
 use message::Message;
 use tokio::sync::broadcast::Sender;
 
+pub const NUM_OSCS: usize = 3;
 static mut SAMPS_PER_SCOPE: u32 = 0;
 
 struct StreamWrapper {
@@ -47,22 +48,28 @@ where
 {
     unsafe {
         super::SAMPLE_RATE = config.sample_rate.0 as f64;
-        SAMPS_PER_SCOPE = app::SCOPE_LEN / SAMPLE_RATE as u32;
+        SAMPS_PER_SCOPE = app::SCOPE_LEN as u32 / SAMPLE_RATE as u32;
         osc::init_tables();
     }
 
     let channels = config.channels as usize;
 
-    let mut osc = Oscillator::new(0);
+    let mut oscs = Vec::with_capacity(NUM_OSCS);
+    for i in 0..NUM_OSCS {
+        oscs.push(Mutex::new(Oscillator::new(i)));
+    }
+    let oscs = Arc::new(oscs);
 
     let mut samps_iter = 0;
-
     let mut rx = tx.subscribe();
+
+    let stream_oscs = Arc::clone(&oscs);
 
     let stream = device.build_output_stream(
         config,
         move |data: &mut [T], _: &cpal::OutputCallbackInfo| {
-            output(data, channels, &mut osc, tx.to_owned(), &mut samps_iter)
+            let stream_oscs = Arc::clone(&stream_oscs);
+            output(data, channels, stream_oscs, tx.to_owned(), &mut samps_iter)
         },
         |err| eprintln!("Stream error: {}", err),
         None,
@@ -73,8 +80,16 @@ where
     stream.stream.play().unwrap();
 
     loop { tokio::select! {
-        Ok(Message::Quit()) = rx.recv() => {
-            return;
+        Ok(msg) = rx.recv() => {
+            match msg {
+                Message::Quit() => {
+                    return;
+                }
+                Message::Freq(i, f) => {
+                    oscs[i].lock().unwrap().set_freq(f);
+                }
+                _ => ()
+            } 
         }
         else => { }
     }}
@@ -83,7 +98,7 @@ where
 fn output<T>(
     output: &mut [T],
     channels: usize,
-    osc: &mut Oscillator,
+    oscs: Arc<Vec<Mutex<Oscillator>>>,
     tx: Sender<Message>,
     samps_iter: &mut u32
 )
@@ -91,16 +106,29 @@ where
     T: SizedSample + FromSample<f64> + Display
 {
     for frame in output.chunks_mut(channels) {
-        let amp = 0.75 * osc.calc();
-        let value: T = T::from_sample(amp);
-        unsafe {
-            if *samps_iter == SAMPS_PER_SCOPE {
-                tx.send(Message::Sample(0, amp));
-                *samps_iter = 0;
-            } else {
-                *samps_iter += 1;
+        let mut amps: [f64; NUM_OSCS] = [0.0; NUM_OSCS];
+
+        for i in 0..NUM_OSCS {
+            let amp = oscs[i].lock().unwrap().calc();
+            unsafe {
+                if *samps_iter == SAMPS_PER_SCOPE {
+                    tx.send(Message::Sample(i, amp));
+                    *samps_iter = 0;
+                } else {
+                    *samps_iter += 1;
+                }
             }
+            amps[i] = amp;
         }
+        
+        let mut value: f64 = 0.0;
+
+        for amp in amps {
+            value += amp;
+        }
+
+        let value = T::from_sample(0.3 * value);
+
         for sample in frame.iter_mut() {
             *sample = value;
         }
