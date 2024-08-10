@@ -60,4 +60,8 @@ impl Oscillator {
     pub fn set_freq(&mut self, freq: f64) {
         self.frequency = freq;
     }
+
+    pub fn set_waveform(&mut self, waveform: Waveform) {
+        self.waveform = waveform;
+    }
 }
