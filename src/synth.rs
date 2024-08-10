@@ -6,7 +6,6 @@ use message::Message;
 use tokio::sync::broadcast::Sender;
 
 pub const NUM_OSCS: usize = 3;
-static mut SAMPS_PER_SCOPE: u32 = 0;
 
 struct StreamWrapper {
     stream: Stream,
@@ -48,7 +47,6 @@ where
 {
     unsafe {
         super::SAMPLE_RATE = config.sample_rate.0 as f64;
-        SAMPS_PER_SCOPE = app::SCOPE_LEN as u32 / SAMPLE_RATE as u32;
         osc::init_tables();
     }
 
@@ -88,6 +86,9 @@ where
                 Message::Freq(i, f) => {
                     oscs[i].lock().unwrap().set_freq(f);
                 }
+                Message::Waveform(i, w) => {
+                    oscs[i].lock().unwrap().set_waveform(w);
+                }
                 _ => ()
             } 
         }
@@ -110,14 +111,6 @@ where
 
         for i in 0..NUM_OSCS {
             let amp = oscs[i].lock().unwrap().calc();
-            unsafe {
-                if *samps_iter == SAMPS_PER_SCOPE {
-                    tx.send(Message::Sample(i, amp));
-                    *samps_iter = 0;
-                } else {
-                    *samps_iter += 1;
-                }
-            }
             amps[i] = amp;
         }
         
