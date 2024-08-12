@@ -5,6 +5,7 @@ pub struct Oscillator {
     fm_range: u16,
     frequency: f64,
     id: usize,
+    mode: Mode,
     phase: f64,
     waveform: Waveform,
 }
@@ -16,6 +17,7 @@ impl Oscillator {
             fm_range: 100,
             frequency: 440.0,
             id,
+            mode: Mode::Freq,
             phase: 0.0,
             waveform: Waveform::Sine,
         }
@@ -61,7 +63,18 @@ impl Oscillator {
         self.frequency = freq;
     }
 
+    pub fn set_mode(&mut self, mode: Mode) {
+        self.mode = mode;
+    }
+
     pub fn set_waveform(&mut self, waveform: Waveform) {
         self.waveform = waveform;
     }
+}
+
+
+#[derive(Clone)]
+pub enum Mode {
+    Freq,
+    MIDI,
 }

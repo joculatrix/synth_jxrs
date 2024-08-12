@@ -86,6 +86,9 @@ where
                 Message::Freq(i, f) => {
                     oscs[i].lock().unwrap().set_freq(f);
                 }
+                Message::Mode(i, m) => {
+                    oscs[i].lock().unwrap().set_mode(m);
+                }
                 Message::Waveform(i, w) => {
                     oscs[i].lock().unwrap().set_waveform(w);
                 }
