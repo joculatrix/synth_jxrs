@@ -1,6 +1,6 @@
 
 use tokio::sync::broadcast::{Sender, Receiver};
-use crate::{main, message::{Channel, Message}, osc, synth};
+use crate::{main, message::{Channel, Message}, osc::{self, oscillator}, synth};
 
 pub fn run(tx: Sender<Message>) {
     let main_window = MainWindow::new().unwrap();
@@ -10,6 +10,14 @@ pub fn run(tx: Sender<Message>) {
         match prop {
             OscProps::Freq => {
                 tx_clone.send(Message::Freq(index as usize, value as f64));
+            }
+            OscProps::Mode => {
+                let value = match value {
+                    0 => oscillator::Mode::Freq,
+                    1 => oscillator::Mode::MIDI,
+                    _ => panic!(),
+                };
+                tx_clone.send(Message::Mode(index as usize, value));
             }
             OscProps::Waveform => {
                 let waveform = match value {
@@ -28,9 +36,9 @@ pub fn run(tx: Sender<Message>) {
 }
 
 slint::slint! {
-    import { ComboBox, HorizontalBox, LineEdit } from "std-widgets.slint";
+    import { ComboBox, HorizontalBox, LineEdit, TabWidget } from "std-widgets.slint";
 
-    export enum OscProps { freq, waveform }
+    export enum OscProps { freq, mode, waveform }
 
     component KnobBackground inherits Path {
         in property <length> thickness;
@@ -204,7 +212,7 @@ slint::slint! {
         in-out property <int> frequency: 440;
         in property <color> accent-color: blue;
 
-        callback changed(OscProps, int);
+        pure callback changed(OscProps, int);
 
         border-radius: 10px;
         background: @linear-gradient(0deg, #4f5d6e 20%, #939aa3 90%);
@@ -224,23 +232,45 @@ slint::slint! {
                 }
             }
             Row {
-                freq_knob := Knob {
-                    text: "FREQUENCY";
-                    value <=> root.frequency;
-                    progress: ((self.value) - 10.0) * 0.0005;
-                    size: 200px;
-                    accent-color: root.accent-color;
+                TabWidget {
+                    // Slint's TabWidget doesn't come built-in with any callback for when the tab is changed.
+                    // Because properties are re-evaluated when something they're dependent on changes, tying an
+                    // arbitrary property to a callback that accepts the current_index of the selected tab (which changes)
+                    // will cause the callback to get called any time the tab changes. Dirty workaround, but it works.
+                    property <bool> change_helper;
 
-                    changed => {
-                        root.changed(OscProps.freq, freq_knob.value);
+                    pure callback tab_changed(int) -> bool;
+                    change_helper: tab_changed(self.current-index);
+
+                    Tab { // 0
+                        title: "Freq";
+                        freq_knob := Knob {
+                            text: "FREQUENCY";
+                            value <=> root.frequency;
+                            progress: ((self.value) - 10.0) * 0.0005;
+                            size: 200px;
+                            accent-color: root.accent-color;
+
+                            changed => {
+                                root.changed(OscProps.freq, freq_knob.value);
+                            }
+                            double-clicked => {
+                                freq_knob.value = 440;
+                                freq_knob.progress = ((freq_knob.value) - 10.0) * 0.0005;
+                            }
+                            text_input_accepted(s) => {
+                                freq_knob.value = max(10, (min(2010, s.to-float())));
+                                freq_knob.progress = ((freq_knob.value) - 10.0) * 0.0005;
+                            }
+                        }
                     }
-                    double-clicked => {
-                        freq_knob.value = 440;
-                        freq_knob.progress = ((freq_knob.value) - 10.0) * 0.0005;
+                    Tab { // 1
+                        title: "MIDI";
                     }
-                    text_input_accepted(s) => {
-                        freq_knob.value = max(10, (min(2010, s.to-float())));
-                        freq_knob.progress = ((freq_knob.value) - 10.0) * 0.0005;
+
+                    tab_changed(i) => {
+                        root.changed(OscProps.mode, i);
+                        return true;
                     }
                 }
             }
@@ -248,7 +278,7 @@ slint::slint! {
     }
 
     export component MainWindow inherits Window {
-        callback prop_changed(int, OscProps, int);
+        pure callback prop_changed(int, OscProps, int);
 
         HorizontalBox {
             osc1 := Oscillator {

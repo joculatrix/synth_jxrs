@@ -1,13 +1,18 @@
 use tokio::sync::broadcast::{Sender, Receiver};
 
-use crate::osc::wave::Waveform;
+use crate::osc::{oscillator, wave::Waveform};
 
+/// The message type sent between threads by the application's broadcast channel.
+/// 
+/// Most types are targeted at specific oscillators. For these, the first parameter is 
+/// always the index of the oscillator.
 #[derive(Clone)]
 pub enum Message {
-    Freq(usize, f64),           // for sending frequency edits from UI to oscillator
-    Sample(usize, f64),         // for sending a sample (f64) from an oscillator (usize) to the UI
-    Quit(),                     // for sending exit signal between threads
-    Waveform(usize, Waveform)   // for using the UI to change the waveform of an oscillator
+    Freq(usize, f64),               // for sending frequency edits from UI to oscillator
+    Mode(usize, oscillator::Mode),  // for toggling an oscillator between constant frequency (Freq) and MIDI-based
+    Sample(usize, f64),             // for sending a sample (f64) from an oscillator (usize) to the UI
+    Quit(),                         // for sending exit signal between threads
+    Waveform(usize, Waveform)       // for using the UI to change the waveform of an oscillator
 }
 
 pub struct Channel {
