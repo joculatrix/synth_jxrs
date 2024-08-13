@@ -15,40 +15,42 @@ struct StreamWrapper {
 unsafe impl Send for StreamWrapper { }
 
 
-pub async fn build(tx: Sender<Message>) -> Result<(), &'static str> {
+pub async fn build(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
     let host = get_host();
     let Some(device) = host.default_output_device() else {
-        return Err("Failed to identify an output device.");
+        return Err("Failed to identify an output device.".into());
     };
     // println!("Output device: {}", device.name().unwrap());
 
-    let config = device.default_output_config().unwrap();
+    let config = device.default_output_config()?;
     // println!("Output config: {:?}", config);
 
     match config.sample_format() {
-        cpal::SampleFormat::I8 => run::<i8>(&device, &config.into(), tx).await,
-        cpal::SampleFormat::I16 => run::<i16>(&device, &config.into(), tx).await,
-        cpal::SampleFormat::I32 => run::<i32>(&device, &config.into(), tx).await,
-        cpal::SampleFormat::I64 => run::<i64>(&device, &config.into(), tx).await,
-        cpal::SampleFormat::U8 => run::<u8>(&device, &config.into(), tx).await,
-        cpal::SampleFormat::U16 => run::<u16>(&device, &config.into(), tx).await,
-        cpal::SampleFormat::U32 => run::<u32>(&device, &config.into(), tx).await,
-        cpal::SampleFormat::U64 => run::<u64>(&device, &config.into(), tx).await,
-        cpal::SampleFormat::F32 => run::<f32>(&device, &config.into(), tx).await,
-        cpal::SampleFormat::F64 => run::<f64>(&device, &config.into(), tx).await,
-        _ => todo!(),
+        cpal::SampleFormat::I8 => run::<i8>(&device, &config.into(), tx).await?,
+        cpal::SampleFormat::I16 => run::<i16>(&device, &config.into(), tx).await?,
+        cpal::SampleFormat::I32 => run::<i32>(&device, &config.into(), tx).await?,
+        cpal::SampleFormat::I64 => run::<i64>(&device, &config.into(), tx).await?,
+        cpal::SampleFormat::U8 => run::<u8>(&device, &config.into(), tx).await?,
+        cpal::SampleFormat::U16 => run::<u16>(&device, &config.into(), tx).await?,
+        cpal::SampleFormat::U32 => run::<u32>(&device, &config.into(), tx).await?,
+        cpal::SampleFormat::U64 => run::<u64>(&device, &config.into(), tx).await?,
+        cpal::SampleFormat::F32 => run::<f32>(&device, &config.into(), tx).await?,
+        cpal::SampleFormat::F64 => run::<f64>(&device, &config.into(), tx).await?,
+        _ => return Err("Unsupported sample format.".into()),
     }
 
     Ok(())
 }
 
-async fn run<T>(device: &cpal::Device, config: &cpal::StreamConfig, tx: Sender<Message>)
+async fn run<T>(device: &cpal::Device, config: &cpal::StreamConfig, tx: Sender<Message>) -> Result<(), Box<dyn Error>>
 where
     T: SizedSample + FromSample<f64> + Display,
 {
     unsafe {
         super::SAMPLE_RATE = config.sample_rate.0 as f64;
-        osc::init_tables();
+        if let Err(e) = osc::init_tables() {
+            return Err(e.into());
+        }
     }
 
     let channels = config.channels as usize;
@@ -72,17 +74,17 @@ where
         },
         |err| eprintln!("Stream error: {}", err),
         None,
-    ).unwrap();
+    )?;
 
     let stream = StreamWrapper{ stream };
 
-    stream.stream.play().unwrap();
+    stream.stream.play()?;
 
     loop { tokio::select! {
         Ok(msg) = rx.recv() => {
             match msg {
                 Message::Quit() => {
-                    return;
+                    return Ok(());
                 }
                 Message::Freq(i, f) => {
                     oscs[i].lock().unwrap().set_freq(f);

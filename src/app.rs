@@ -1,9 +1,11 @@
 
-use tokio::sync::broadcast::{Sender, Receiver};
-use crate::{main, message::{Channel, Message}, osc::{self, oscillator}, synth};
+use std::error::Error;
 
-pub fn run(tx: Sender<Message>) {
-    let main_window = MainWindow::new().unwrap();
+use tokio::sync::broadcast::Sender;
+use crate::{message::Message, osc::{self, oscillator}};
+
+pub fn run(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
+    let main_window = MainWindow::new()?;
 
     let tx_clone = tx.clone();
     main_window.on_prop_changed(move |index, prop, value| {
@@ -32,7 +34,11 @@ pub fn run(tx: Sender<Message>) {
         }
     });
 
-    main_window.run().unwrap();
+    main_window.run()?;
+
+    tx.send(Message::Quit())?;
+
+    Ok(())
 }
 
 slint::slint! {

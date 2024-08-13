@@ -1,7 +1,6 @@
 use std::{
     error::Error,
     f64::consts::PI,
-    io::{self, Stdout},
     sync::{Arc, Mutex},
 };
 use cpal::{Host, Stream};
@@ -29,15 +28,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let tx2 = tx.clone();
     handles.push(tokio::spawn(async move {
-        synth::build(tx2).await.unwrap();
+        if let Err(e) = synth::build(tx2).await {
+            eprintln!("Audio error: {e}");
+        }
     }));
 
     let tx3 = tx.clone();
     handles.push(tokio::spawn(async move {
-        midi::listen(tx3).await.unwrap();
+        if let Err(e) = midi::listen(tx3).await {
+            eprintln!("MIDI error: {e}");
+        }
     }));
 
-    app::run(tx);
+    if let Err(e) = app::run(tx) {
+        eprintln!("Application error: {e}");
+    }
     
     for handle in handles {
         handle.await?;
