@@ -1,4 +1,4 @@
-use std::{array, error::Error};
+use std::error::Error;
 
 use midi_control::MidiMessage;
 use midir::MidiInput;
@@ -6,9 +6,6 @@ use tokio::sync::broadcast::Sender;
 
 use crate::message::Message;
 
-// initialized in listen() since runtime calculations can't be used in static definitions,
-// and hardcoding 128 frequency values would be messy
-static mut MIDI_TO_HZ: [f64; 128] = [0.0; 128];
 
 pub async fn listen(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
     // client_name is currently unused by the midir code, and its intended purpose is unexplained,
@@ -21,13 +18,6 @@ pub async fn listen(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
         // TODO: allow port selection through UI instead of forcing first port
         _ => &inputs[0],
     };
-
-    unsafe {
-        MIDI_TO_HZ = array::from_fn(|i| {
-            let val = f64::powf(2.0, (i as f64 - 69.0) / 12.0);
-            440.0 * val
-        });
-    }
 
     let mut rx = tx.subscribe();
 
@@ -65,12 +55,12 @@ fn parse_message(timestamp: u64, msg: &[u8], tx: &mut Sender<Message>) -> Result
         }
         MidiMessage::NoteOn(_channel, key_event) => unsafe {
             tx.send(Message::NoteOn(
-                MIDI_TO_HZ[key_event.key as usize],
+                key_event.key,
                 key_event.value
             ))?;
         }
-        MidiMessage::NoteOff(_, _) => {
-            tx.send(Message::NoteOff())?;
+        MidiMessage::NoteOff(_channel, key_event) => {
+            tx.send(Message::NoteOff(key_event.key))?;
         }
         MidiMessage::PolyKeyPressure(_, _) => todo!(),
         MidiMessage::ControlChange(_, _) => todo!(),

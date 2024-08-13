@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{array, fmt::Display};
 use crate::*;
 
 use cpal::{traits::{DeviceTrait, HostTrait, StreamTrait}, FromSample, SizedSample};
@@ -7,6 +7,10 @@ use osc::oscillator::Mode;
 use tokio::sync::broadcast::Sender;
 
 pub const NUM_OSCS: usize = 3;
+
+// initialized in build() since runtime calculations can't be used in static definitions,
+// and hardcoding 128 frequency values would be messy
+pub static mut MIDI_TO_HZ: [f64; 128] = [0.0; 128];
 
 struct StreamWrapper {
     stream: Stream,
@@ -24,6 +28,13 @@ pub async fn build(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
 
     let config = device.default_output_config()?;
     // println!("Output config: {:?}", config);
+
+    unsafe {
+        MIDI_TO_HZ = array::from_fn(|i| {
+            let val = f64::powf(2.0, (i as f64 - 69.0) / 12.0);
+            440.0 * val
+        });
+    }
 
     match config.sample_format() {
         cpal::SampleFormat::I8 => run::<i8>(&device, &config.into(), tx).await?,
@@ -92,20 +103,21 @@ where
                 Message::Mode(i, m) => {
                     oscs[i].lock().unwrap().set_mode(m);
                 }
-                Message::NoteOn(freq, velocity) => {
+                Message::NoteOn(pitch, velocity) => unsafe {
                     oscs.iter().for_each(|osc| {
                         let mut lock = osc.lock().unwrap();
                         if lock.get_mode() == Mode::MIDI {
-                            lock.amp.note_on();
-                            lock.set_freq(freq);
+                            lock.amp.note_on(pitch);
+                            lock.note_on(pitch);
                         }
                     })
                 }
-                Message::NoteOff() => {
+                Message::NoteOff(pitch) => {
                     oscs.iter().for_each(|osc| {
                         let mut lock = osc.lock().unwrap();
                         if lock.get_mode() == Mode::MIDI {
-                            lock.amp.note_off();
+                            lock.amp.note_off(pitch);
+                            lock.note_off(pitch);
                         }
                     })
                 }

@@ -1,8 +1,10 @@
-use std::time::Instant;
+use std::{ collections::BTreeSet, time::Instant};
 
 pub struct Amplifier {
+    active_notes: BTreeSet<u8>,
     pub adsr: Envelope,
     last_amplitude: f64,
+    legato: bool,
     note_on: bool,
     start_time: Option<Instant>,
     release_time: Option<Instant>,
@@ -11,8 +13,10 @@ pub struct Amplifier {
 impl Amplifier {
     pub fn default() -> Amplifier {
         Amplifier {
+            active_notes: BTreeSet::new(),
             adsr: Envelope::default(),
             last_amplitude: 0.0,
+            legato: false,
             note_on: false,
             start_time: None,
             release_time: None,
@@ -21,28 +25,37 @@ impl Amplifier {
 
     pub fn new(adsr: Envelope) -> Amplifier {
         Amplifier {
+            active_notes: BTreeSet::new(),
             adsr,
             last_amplitude: 0.0,
+            legato: false,
             note_on: false,
             start_time: None,
             release_time: None,
         }
     }
 
-    pub fn note_on(&mut self) {
+    pub fn note_on(&mut self, pitch: u8) {
         self.note_on = true;
-        if self.start_time.is_none() {
+        if self.start_time.is_none() { // if no other note is currently playing
+            self.active_notes.insert(pitch);
             self.start_time = Some(Instant::now());
             self.release_time.take();
+        } else if !self.active_notes.contains(&pitch) { // if another note is playing but not this one
+            self.active_notes.insert(pitch);
+            if !self.legato {
+                self.start_time = Some(Instant::now());
+            }
         }
     }
 
-    pub fn note_off(&mut self) {
-        self.note_on = false;
-        if self.release_time.is_none() {
+    pub fn note_off(&mut self, pitch: u8) {
+        if self.release_time.is_none() && self.active_notes.len() == 1 {
+            self.note_on = false;
             self.start_time = Some(Instant::now());
             self.start_time.take();
         }
+        self.active_notes.remove(&pitch);
     }
 
     pub fn calc(&mut self, sample_in: f64) -> f64 {

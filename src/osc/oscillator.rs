@@ -1,4 +1,4 @@
-use crate::amp::Amplifier;
+use crate::{amp::Amplifier, synth};
 
 use super::{wave::Waveform, *};
 
@@ -8,6 +8,7 @@ pub struct Oscillator {
     fm_range: u16,
     frequency: f64,
     id: usize,
+    midi_notes: Vec<u8>,
     mode: Mode,
     phase: f64,
     waveform: Waveform,
@@ -21,6 +22,7 @@ impl Oscillator {
             fm_range: 100,
             frequency: 440.0,
             id,
+            midi_notes: vec![],
             mode: Mode::Freq,
             phase: 0.0,
             waveform: Waveform::Sine,
@@ -57,6 +59,29 @@ impl Oscillator {
 
     pub fn get_mode(&self) -> Mode {
         self.mode
+    }
+
+    pub fn note_on(&mut self, pitch: u8) {
+        if !self.midi_notes.contains(&pitch) {
+            self.midi_notes.insert(0, pitch);
+            unsafe {
+                self.set_freq(synth::MIDI_TO_HZ[pitch as usize]);
+            }
+        }
+    }
+
+    pub fn note_off(&mut self, pitch: u8) {
+        for i in 0..self.midi_notes.len() {
+            if self.midi_notes[i] == pitch {
+                self.midi_notes.remove(i);
+                break;
+            }
+        }
+        if !self.midi_notes.is_empty() {
+            unsafe {
+                self.set_freq(synth::MIDI_TO_HZ[self.midi_notes[0] as usize]);
+            }
+        }
     }
 
     pub fn set_fm(&mut self, osc: Option<Oscillator>) {
