@@ -96,7 +96,16 @@ where
                     oscs.iter().for_each(|osc| {
                         let mut lock = osc.lock().unwrap();
                         if lock.get_mode() == Mode::MIDI {
+                            lock.amp.note_on();
                             lock.set_freq(freq);
+                        }
+                    })
+                }
+                Message::NoteOff() => {
+                    oscs.iter().for_each(|osc| {
+                        let mut lock = osc.lock().unwrap();
+                        if lock.get_mode() == Mode::MIDI {
+                            lock.amp.note_off();
                         }
                     })
                 }

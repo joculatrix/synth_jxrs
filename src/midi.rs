@@ -64,9 +64,14 @@ fn parse_message(timestamp: u64, msg: &[u8], tx: &mut Sender<Message>) -> Result
             return Err("invalid MIDI received".into());
         }
         MidiMessage::NoteOn(_channel, key_event) => unsafe {
-            tx.send(Message::NoteOn(MIDI_TO_HZ[key_event.key as usize], key_event.value))?;
+            tx.send(Message::NoteOn(
+                MIDI_TO_HZ[key_event.key as usize],
+                key_event.value
+            ))?;
         }
-        MidiMessage::NoteOff(_, _) => (),
+        MidiMessage::NoteOff(_, _) => {
+            tx.send(Message::NoteOff())?;
+        }
         MidiMessage::PolyKeyPressure(_, _) => todo!(),
         MidiMessage::ControlChange(_, _) => todo!(),
         MidiMessage::ProgramChange(_, _) => todo!(),

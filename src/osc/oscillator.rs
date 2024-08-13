@@ -1,6 +1,9 @@
+use crate::amp::Amplifier;
+
 use super::{wave::Waveform, *};
 
 pub struct Oscillator {
+    pub amp: Amplifier,
     fm: Option<Box<Oscillator>>,
     fm_range: u16,
     frequency: f64,
@@ -13,6 +16,7 @@ pub struct Oscillator {
 impl Oscillator {
     pub fn new(id: usize) -> Oscillator {
         Oscillator {
+            amp: Amplifier::default(),
             fm: None,
             fm_range: 100,
             frequency: 440.0,
@@ -44,7 +48,11 @@ impl Oscillator {
             }
         }
 
-        res
+        if self.mode == Mode::MIDI {
+            self.amp.calc(res)
+        } else {
+            res
+        }
     }
 
     pub fn get_mode(&self) -> Mode {
