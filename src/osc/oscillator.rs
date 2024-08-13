@@ -47,6 +47,10 @@ impl Oscillator {
         res
     }
 
+    pub fn get_mode(&self) -> Mode {
+        self.mode
+    }
+
     pub fn set_fm(&mut self, osc: Option<Oscillator>) {
         if let Some(osc) = osc {
             self.fm = Some(Box::new(osc));
@@ -73,7 +77,7 @@ impl Oscillator {
 }
 
 
-#[derive(Clone)]
+#[derive(Clone,Copy,Debug,PartialEq)]
 pub enum Mode {
     Freq,
     MIDI,

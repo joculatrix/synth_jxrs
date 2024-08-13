@@ -3,7 +3,7 @@ use rand::{self, Rng};
 
 static SAW_HARMONIC_COUNT: usize = 40;
 
-#[derive(Clone)]
+#[derive(Clone,Debug)]
 pub enum Waveform {
     Noise,
     Saw,

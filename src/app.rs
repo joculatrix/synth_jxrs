@@ -40,6 +40,14 @@ slint::slint! {
 
     export enum OscProps { freq, mode, waveform }
 
+    component ChangeObserver {
+        in property <int> value;
+        pure callback changed(int, float) -> float;
+
+        width: 0; height: 0; visible: false;
+        opacity: changed(value, 1);
+    }
+
     component KnobBackground inherits Path {
         in property <length> thickness;
         in property <float> size;
@@ -232,16 +240,7 @@ slint::slint! {
                 }
             }
             Row {
-                TabWidget {
-                    // Slint's TabWidget doesn't come built-in with any callback for when the tab is changed.
-                    // Because properties are re-evaluated when something they're dependent on changes, tying an
-                    // arbitrary property to a callback that accepts the current_index of the selected tab (which changes)
-                    // will cause the callback to get called any time the tab changes. Dirty workaround, but it works.
-                    property <bool> change_helper;
-
-                    pure callback tab_changed(int) -> bool;
-                    change_helper: tab_changed(self.current-index);
-
+                tabs := TabWidget {
                     Tab { // 0
                         title: "Freq";
                         freq_knob := Knob {
@@ -267,12 +266,19 @@ slint::slint! {
                     Tab { // 1
                         title: "MIDI";
                     }
-
-                    tab_changed(i) => {
-                        root.changed(OscProps.mode, i);
-                        return true;
-                    }
                 }
+            }
+        }
+        // Slint's built-in TabWidget has no callback for listening for the active tab to
+        // change. This solution is thanks to user maurges's solution in discussion post #4717
+        // on Slint's GitHub repository.
+        ChangeObserver {
+            value: tabs.current-index;
+
+            changed(v, f) => {
+                root.changed(OscProps.mode, v);
+
+                return f;
             }
         }
     }

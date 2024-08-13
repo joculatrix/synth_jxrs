@@ -5,15 +5,15 @@ use std::{
     sync::{Arc, Mutex},
 };
 use cpal::{Host, Stream};
-use message::Message;
 use osc::oscillator::Oscillator;
-use tokio::sync::broadcast::{self, error::RecvError, Receiver, Sender};
+use tokio::sync::broadcast::{self};
 
 // modules:
 mod amp;
 mod app;
 mod filter;
 mod message;
+mod midi;
 mod mixer;
 mod osc;
 mod synth;
@@ -25,13 +25,24 @@ static mut SAMPLE_RATE: f64 = 48000.0;
 async fn main() -> Result<(), Box<dyn Error>> {
     let (tx, _rx) = broadcast::channel(10);
 
+    let mut handles = vec![];
+
     let tx2 = tx.clone();
-    let handle = tokio::spawn(async move {
+    handles.push(tokio::spawn(async move {
         synth::build(tx2).await.unwrap();
-    });
+    }));
+
+    let tx3 = tx.clone();
+    handles.push(tokio::spawn(async move {
+        midi::listen(tx3).await.unwrap();
+    }));
 
     app::run(tx);
     
+    for handle in handles {
+        handle.await?;
+    }
+
     Ok(())
 }
 

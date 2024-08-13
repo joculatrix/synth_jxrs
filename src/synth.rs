@@ -3,6 +3,7 @@ use crate::*;
 
 use cpal::{traits::{DeviceTrait, HostTrait, StreamTrait}, FromSample, SizedSample};
 use message::Message;
+use osc::oscillator::Mode;
 use tokio::sync::broadcast::Sender;
 
 pub const NUM_OSCS: usize = 3;
@@ -88,6 +89,14 @@ where
                 }
                 Message::Mode(i, m) => {
                     oscs[i].lock().unwrap().set_mode(m);
+                }
+                Message::NoteOn(freq, velocity) => {
+                    oscs.iter().for_each(|osc| {
+                        let mut lock = osc.lock().unwrap();
+                        if lock.get_mode() == Mode::MIDI {
+                            lock.set_freq(freq);
+                        }
+                    })
                 }
                 Message::Waveform(i, w) => {
                     oscs[i].lock().unwrap().set_waveform(w);
