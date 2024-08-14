@@ -97,6 +97,9 @@ where
                 Message::Quit() => {
                     return Ok(());
                 }
+                Message::Bypass(i, b) => {
+                    oscs[i].lock().unwrap().bypass = b;
+                }
                 Message::Freq(i, f) => {
                     oscs[i].lock().unwrap().set_freq(f);
                 }

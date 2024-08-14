@@ -10,6 +10,14 @@ pub fn run(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
     let tx_clone = tx.clone();
     main_window.on_prop_changed(move |index, prop, value| {
         match prop {
+            OscProps::Bypass => {
+                let value = match value {
+                    0 => false,
+                    1 => true,
+                    _ => panic!(),
+                };
+                tx_clone.send(Message::Bypass(index as usize, value));
+            }
             OscProps::Freq => {
                 tx_clone.send(Message::Freq(index as usize, value as f64));
             }
@@ -42,9 +50,9 @@ pub fn run(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
 }
 
 slint::slint! {
-    import { ComboBox, HorizontalBox, LineEdit, TabWidget } from "std-widgets.slint";
+    import { ComboBox, HorizontalBox, LineEdit, TabWidget, Switch } from "std-widgets.slint";
 
-    export enum OscProps { freq, mode, waveform }
+    export enum OscProps { bypass, freq, mode, waveform }
 
     component ChangeObserver {
         in property <int> value;
@@ -236,6 +244,12 @@ slint::slint! {
             spacing: 10px;
 
             Row {
+                Switch {
+                    toggled => {
+                        // switch on = oscillator is on, not bypass is on
+                        self.checked ? root.changed(OscProps.bypass, 0) : root.changed(OscProps.bypass, 1);
+                    }
+                }
                 ComboBox {
                     model: ["Noise", "Saw", "Sine", "Square", "Triangle"];
                     current-value: "Sine";

@@ -4,6 +4,7 @@ use super::{wave::Waveform, *};
 
 pub struct Oscillator {
     pub amp: Amplifier,
+    pub bypass: bool,
     fm: Option<Box<Oscillator>>,
     fm_range: u16,
     frequency: f64,
@@ -18,6 +19,7 @@ impl Oscillator {
     pub fn new(id: usize) -> Oscillator {
         Oscillator {
             amp: Amplifier::default(),
+            bypass: true,
             fm: None,
             fm_range: 100,
             frequency: 440.0,
@@ -30,6 +32,10 @@ impl Oscillator {
     }
 
     pub fn calc(&mut self) -> f64 {
+        if self.bypass {
+            return 0.0;
+        }
+
         let mut frequency = self.frequency;
         let res = self.waveform.get_sample(self.phase);
 

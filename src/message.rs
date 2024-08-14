@@ -8,6 +8,7 @@ use crate::osc::{oscillator, wave::Waveform};
 /// always the index of the oscillator.
 #[derive(Clone,Debug)]
 pub enum Message {
+    Bypass(usize, bool),            // for enabling/disabling an oscillator
     Freq(usize, f64),               // for sending frequency edits from UI to oscillator
     Mode(usize, oscillator::Mode),  // for toggling an oscillator between constant frequency (Freq) and MIDI-based
     NoteOn(u8, u8),                 // MIDI NoteOn: (pitch, velocity)
