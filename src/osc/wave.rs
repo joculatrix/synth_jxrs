@@ -3,7 +3,7 @@ use rand::{self, Rng};
 
 static SAW_HARMONIC_COUNT: usize = 40;
 
-#[derive(Clone,Debug)]
+#[derive(Clone,Debug,PartialEq)]
 pub enum Waveform {
     Noise,
     Saw,
@@ -53,11 +53,11 @@ impl Waveform {
 
         unsafe {
             match self {
-                Waveform::Noise => super::NOISE_TABLE[i],
                 Waveform::Saw => super::SAW_TABLE[i],
                 Waveform::Sine => super::SINE_TABLE[i],
                 Waveform::Square => super::SQUARE_TABLE[i],
                 Waveform::Triangle => super::TRI_TABLE[i],
+                _ => panic!(), // this function shouldn't get called by noise oscillators -- see Oscillator::calc()
             }
         } 
     }

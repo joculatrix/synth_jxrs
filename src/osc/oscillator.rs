@@ -37,7 +37,12 @@ impl Oscillator {
         }
 
         let mut frequency = self.frequency;
-        let res = self.waveform.get_sample(self.phase);
+
+        let res = if self.waveform == Waveform::Noise {
+            Waveform::Noise.calc(0.0, 0.0)
+        } else {
+            self.waveform.get_sample(self.phase)
+        };
 
         // for frequency modulation
         if let Some(ref mut osc) = &mut self.fm {
@@ -48,9 +53,13 @@ impl Oscillator {
         unsafe {
             let table_length = TABLE_LENGTH as f64;
 
-            self.phase +=
-                frequency * table_length / crate::SAMPLE_RATE;
-            
+            // frequency should not affect white noise
+            if self.waveform == Waveform::Noise {
+                self.phase += 1.0;
+            } else {
+                self.phase +=
+                    frequency * table_length / crate::SAMPLE_RATE;
+            }
             if self.phase >= table_length as f64 {
                 self.phase -= table_length as f64;
             }
