@@ -3,6 +3,7 @@ use std::{ collections::BTreeSet, time::Instant};
 pub struct Amplifier {
     active_notes: BTreeSet<u8>,
     pub adsr: Envelope,
+    gain: f64,
     last_amplitude: f64,
     legato: bool,
     note_on: bool,
@@ -19,6 +20,7 @@ impl Amplifier {
         Amplifier {
             active_notes: BTreeSet::new(),
             adsr,
+            gain: 1.0,
             last_amplitude: 0.0,
             legato: false,
             note_on: false,
@@ -42,7 +44,7 @@ impl Amplifier {
     }
 
     pub fn note_off(&mut self, pitch: u8) {
-        if self.release_time.is_none() && self.active_notes.len() == 1 {
+        if self.release_time.is_none() && self.active_notes.len() <= 1 {
             self.note_on = false;
             self.start_time = Some(Instant::now());
             self.start_time.take();
@@ -62,7 +64,7 @@ impl Amplifier {
             } else if since_attack > self.adsr.attack + self.adsr.decay {
                 self.adsr.sustain
             } else {
-                (since_attack - self.adsr.attack) / self.adsr.decay
+                self.adsr.sustain * ((since_attack - self.adsr.attack) / self.adsr.decay)
             }
         } else if let Some(release_time) = self.release_time {
             if self.last_amplitude <= 0.0001 {
@@ -81,10 +83,25 @@ impl Amplifier {
 
         self.last_amplitude = amplitude;
 
-        sample_in * amplitude
+        sample_in * amplitude * self.gain
+    }
+
+    pub fn get_gain(&mut self) -> f64 {
+        self.gain
+    }
+
+    /// Modify the gain property of the Amplifier.
+    /// 
+    /// The input value should be a value in dB. Often this value is between -60 and 0. The gain in dB will
+    /// be converted to an amplitude modifier between 0.0 and 1.0 before assignment.
+    pub fn set_gain(&mut self, gain_db: f64) {
+        self.gain = db_to_amp(gain_db);
     }
 }
 
+fn db_to_amp(db: f64) -> f64 {
+    f64::powf(10.0, db / 20.0)
+}
 
 
 pub struct Envelope {

@@ -97,11 +97,20 @@ where
                 Message::Quit() => {
                     return Ok(());
                 }
+                Message::Attack(i, a) => {
+                    oscs[i].lock().unwrap().amp.adsr.attack = a;
+                }
                 Message::Bypass(i, b) => {
                     oscs[i].lock().unwrap().bypass = b;
                 }
+                Message::Decay(i, d) => {
+                    oscs[i].lock().unwrap().amp.adsr.decay = d;
+                }
                 Message::Freq(i, f) => {
                     oscs[i].lock().unwrap().set_freq(f);
+                }
+                Message::Gain(i, g) => {
+                    oscs[i].lock().unwrap().amp.set_gain(g);
                 }
                 Message::Mode(i, m) => {
                     oscs[i].lock().unwrap().set_mode(m);
@@ -123,6 +132,12 @@ where
                             lock.note_off(pitch);
                         }
                     })
+                }
+                Message::Release(i, r) => {
+                    oscs[i].lock().unwrap().amp.adsr.release = r;
+                }
+                Message::Sustain(i, s) => {
+                    oscs[i].lock().unwrap().amp.adsr.set_sustain(s);
                 }
                 Message::Waveform(i, w) => {
                     oscs[i].lock().unwrap().set_waveform(w);

@@ -68,7 +68,7 @@ impl Oscillator {
         if self.mode == Mode::MIDI {
             self.amp.calc(res)
         } else {
-            res
+            res * self.amp.get_gain()
         }
     }
 
