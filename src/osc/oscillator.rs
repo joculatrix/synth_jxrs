@@ -77,6 +77,9 @@ impl Oscillator {
     }
 
     pub fn note_on(&mut self, pitch: u8) {
+        if self.midi_notes.is_empty() {
+            self.phase = 0.0;
+        }
         if !self.midi_notes.contains(&pitch) {
             self.midi_notes.insert(0, pitch);
             unsafe {

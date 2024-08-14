@@ -12,15 +12,7 @@ pub struct Amplifier {
 
 impl Amplifier {
     pub fn default() -> Amplifier {
-        Amplifier {
-            active_notes: BTreeSet::new(),
-            adsr: Envelope::default(),
-            last_amplitude: 0.0,
-            legato: false,
-            note_on: false,
-            start_time: None,
-            release_time: None,
-        }
+        Amplifier::new(Envelope::default())
     }
 
     pub fn new(adsr: Envelope) -> Amplifier {
