@@ -46,8 +46,8 @@ impl Amplifier {
     pub fn note_off(&mut self, pitch: u8) {
         if self.release_time.is_none() && self.active_notes.len() <= 1 {
             self.note_on = false;
-            self.start_time = Some(Instant::now());
             self.start_time.take();
+            self.release_time = Some(Instant::now());
         }
         self.active_notes.remove(&pitch);
     }
@@ -59,29 +59,33 @@ impl Amplifier {
                 .expect("Start time shouldn't be None when note_on is true"))
                 .as_secs_f64();
 
+            // The Amplifier's last_amplitude field is used to keep track of the last generated
+            // amplitude of the "on" phase of the note's lifetime. This is used to prevent the
+            // note from jumping up to sustain amplitude if it wasn't reached before the note ended.
             if since_attack <= self.adsr.attack {
-                since_attack / self.adsr.attack
+                self.last_amplitude = since_attack / self.adsr.attack;
             } else if since_attack > self.adsr.attack + self.adsr.decay {
-                self.adsr.sustain
+                self.last_amplitude = self.adsr.sustain;
             } else {
-                self.adsr.sustain * ((since_attack - self.adsr.attack) / self.adsr.decay)
+                self.last_amplitude = self.adsr.sustain * ((since_attack - self.adsr.attack) / self.adsr.decay);
             }
+
+            self.last_amplitude
+
         } else if let Some(release_time) = self.release_time {
-            if self.last_amplitude <= 0.0001 {
+            let since_release = Instant::now()
+                .duration_since(release_time)
+                .as_secs_f64();
+
+            if since_release >= self.adsr.release {
                 self.release_time.take();
                 0.0
             } else {
-                let since_release = Instant::now()
-                    .duration_since(release_time)
-                    .as_secs_f64();
-
-                (since_release / self.adsr.release) * (0.0 - self.adsr.sustain) + self.adsr.sustain
+                self.last_amplitude - (since_release / self.adsr.release)
             }
         } else {
             0.0
         };
-
-        self.last_amplitude = amplitude;
 
         sample_in * amplitude * self.gain
     }
@@ -90,10 +94,10 @@ impl Amplifier {
         self.gain
     }
 
-    /// Modify the gain property of the Amplifier.
+    /// Modifies the `gain` property of an Amplifier.
     /// 
-    /// The input value should be a value in dB. Often this value is between -60 and 0. The gain in dB will
-    /// be converted to an amplitude modifier between 0.0 and 1.0 before assignment.
+    /// The `gain_gb` argument should be a value in dB. Often this value is between -60 and 0.
+    /// The gain in dB will be converted to an amplitude modifier between 0.0 and 1.0 before assignment.
     pub fn set_gain(&mut self, gain_db: f64) {
         self.gain = db_to_amp(gain_db);
     }

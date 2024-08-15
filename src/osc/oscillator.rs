@@ -49,7 +49,7 @@ impl Oscillator {
             frequency += (self.fm_range / 2) as f64 * osc.calc();
         }
 
-        // iterate to next sample
+        // iterate to next sample/phase
         unsafe {
             let table_length = TABLE_LENGTH as f64;
 
