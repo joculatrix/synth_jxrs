@@ -62,13 +62,19 @@ impl Amplifier {
             // The Amplifier's last_amplitude field is used to keep track of the last generated
             // amplitude of the "on" phase of the note's lifetime. This is used to prevent the
             // note from jumping up to sustain amplitude if it wasn't reached before the note ended.
-            if since_attack <= self.adsr.attack {
-                self.last_amplitude = since_attack / self.adsr.attack;
+            self.last_amplitude = if since_attack <= self.adsr.attack {
+                if self.adsr.decay > 0.0 {
+                    // attack towards 1.0 so decay can decrease to sustain amplitude
+                    since_attack / self.adsr.attack
+                } else {
+                    // attack towards sustain amplitude
+                    self.adsr.sustain * since_attack / self.adsr.attack
+                }
             } else if since_attack > self.adsr.attack + self.adsr.decay {
-                self.last_amplitude = self.adsr.sustain;
+                self.adsr.sustain
             } else {
-                self.last_amplitude = self.adsr.sustain * ((since_attack - self.adsr.attack) / self.adsr.decay);
-            }
+                1.0 - ((1.0 - self.adsr.sustain) * (since_attack - self.adsr.attack)) / self.adsr.decay
+            };
 
             self.last_amplitude
 
