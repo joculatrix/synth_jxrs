@@ -11,9 +11,12 @@ pub fn run(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
 
     let tx_clone = tx.clone();
     main_window.on_prop_changed(move |index, prop, value| {
+        // Index values are hardcoded in app.slint -- if this cast fails, something is very wrong.
+        let index = index as usize;
+
         match prop {
             OscProps::Attack => {
-                tx_clone.send(Message::Attack(index as usize, value as f64));
+                tx_clone.send(Message::Attack(index, value.into()));
             }
             OscProps::Bypass => {
                 let value = match value {
@@ -21,40 +24,40 @@ pub fn run(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
                     1.0 => true,
                     _ => panic!(),
                 };
-                tx_clone.send(Message::Bypass(index as usize, value));
+                tx_clone.send(Message::Bypass(index, value));
             }
             OscProps::Decay => {
-                tx_clone.send(Message::Decay(index as usize, value as f64));
+                tx_clone.send(Message::Decay(index, value.into()));
             }
             OscProps::Freq => {
-                tx_clone.send(Message::Freq(index as usize, value as f64));
+                tx_clone.send(Message::Freq(index, value.into()));
             }
             OscProps::Gain => {
-                tx_clone.send(Message::Gain(index as usize, value as f64));
+                tx_clone.send(Message::Gain(index, value.into()));
             }
-            OscProps::Mode => {
-                let value = match value {
-                    0.0 => oscillator::Mode::Freq,
-                    1.0 => oscillator::Mode::MIDI,
+            OscProps::Mode => unsafe {
+                let value = match value.to_int_unchecked() {
+                    0 => oscillator::Mode::Freq,
+                    1 => oscillator::Mode::MIDI,
                     _ => panic!(),
                 };
-                tx_clone.send(Message::Mode(index as usize, value));
+                tx_clone.send(Message::Mode(index, value));
             }
             OscProps::Release => {
-                tx_clone.send(Message::Release(index as usize, value as f64));
+                tx_clone.send(Message::Release(index, value.into()));
             }
             OscProps::Sustain => {
-                tx_clone.send(Message::Sustain(index as usize, value as f64));
+                tx_clone.send(Message::Sustain(index, value.into()));
             }
-            OscProps::Waveform => {
-                let waveform = match value {
-                    0.0 => osc::wave::Waveform::Noise,
-                    1.0 => osc::wave::Waveform::Saw,
-                    3.0 => osc::wave::Waveform::Square,
-                    4.0 => osc::wave::Waveform::Triangle,
+            OscProps::Waveform => unsafe {
+                let waveform = match value.to_int_unchecked() {
+                    0 => osc::wave::Waveform::Noise,
+                    1 => osc::wave::Waveform::Saw,
+                    3 => osc::wave::Waveform::Square,
+                    4 => osc::wave::Waveform::Triangle,
                     _ => osc::wave::Waveform::Sine, // just set to Sine if something goes wrong?
                 };
-                tx_clone.send(Message::Waveform(index as usize, waveform));
+                tx_clone.send(Message::Waveform(index, waveform));
             }
         }
     });
