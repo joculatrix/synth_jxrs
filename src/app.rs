@@ -6,10 +6,14 @@ use crate::{message::Message, osc::{self, oscillator}};
 // rust analyzer might flag the following macro as an error, but the project should still compile successfully:
 slint::include_modules!();
 
+/// Starts the UI and handles the Rust-side connecting operations called by Slint. Actual UI generation is handled
+/// in `app.slint`.
 pub fn run(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
     let main_window = MainWindow::new()?;
 
     let tx_clone = tx.clone();
+
+    // "prop_changed()" callback in MainWindow of app.slint
     main_window.on_prop_changed(move |index, prop, value| {
         // Index values are hardcoded in app.slint -- if this cast fails, something is very wrong.
         let index = index as usize;
@@ -67,8 +71,4 @@ pub fn run(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
     tx.send(Message::Quit())?;
 
     Ok(())
-}
-
-slint::slint! {
-    
 }

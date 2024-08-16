@@ -1,26 +1,40 @@
 use std::{array, fmt::Display};
 use crate::*;
 
-use cpal::{traits::{DeviceTrait, HostTrait, StreamTrait}, Host, FromSample, SizedSample, Stream};
+use cpal::{traits::{DeviceTrait, HostTrait, StreamTrait}, FromSample, SizedSample, Stream};
 use message::Message;
 use osc::oscillator::Mode;
 use tokio::sync::broadcast::Sender;
 
+/// The number of [`Oscillator`]s the synthesizer should have. Currently, this is a convenience identifier
+/// for a value that shouldn't be edited. In order for this number to have the power to quickly alter the
+/// program, [`app`] would have to be heavily refactored to allow Slint to dynamically and cleanly generate
+/// the UI for an arbitrary amount of oscillators.
 pub const NUM_OSCS: usize = 3;
 
-// initialized in build() since runtime calculations can't be used in static definitions,
-// and hardcoding 128 frequency values would be messy
+/// A table of MIDI pitch values `[0..127]` and their corresponding frequencies in Hz.
+/// 
+/// The values in this table are inserted in [`build()`], as non-constant functions can't be used to
+/// initialize statics.
 pub static mut MIDI_TO_HZ: [f64; 128] = [0.0; 128];
 
+/// A wrapper for `cpal::Stream` to force it to implement the `Send` trait.
+/// 
+/// Because [`run()`] must repeatedly `await` async operations to receive messages from other tasks,
+/// but the audio stream must continue to function while this happens, the stream has to implement
+/// the `Send` trait in order to be held until its intended shutdown.
 struct StreamWrapper {
     stream: Stream,
 }
 
 unsafe impl Send for StreamWrapper { }
 
-
+/// Connects to the audio device and begins running the audio stream task.
+/// 
+/// This function also calculates the values of [`MIDI_TO_HZ`] and determines the sample format of
+/// the audio device to be used as the type of [`run()`], which this function `await`s.
 pub async fn build(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
-    let host = get_host();
+    let host = cpal::default_host();
     let Some(device) = host.default_output_device() else {
         return Err("Failed to identify an output device.".into());
     };
@@ -53,27 +67,25 @@ pub async fn build(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Initializes wavetables and oscillators, runs audio playback stream, and handles incoming messages from other tasks.
+/// 
+/// The `cpal::Stream` used to play audio uses [`output()`] as a callback.
 async fn run<T>(device: &cpal::Device, config: &cpal::StreamConfig, tx: Sender<Message>) -> Result<(), Box<dyn Error>>
 where
     T: SizedSample + FromSample<f64> + Display,
 {
     unsafe {
         super::SAMPLE_RATE = config.sample_rate.0 as f64;
-        if let Err(e) = osc::init_tables() {
-            return Err(e.into());
-        }
+        osc::init_tables();
     }
 
     let channels = config.channels as usize;
 
     let mut oscs = Vec::with_capacity(NUM_OSCS);
-    for i in 0..NUM_OSCS {
-        oscs.push(Mutex::new(Oscillator::new(i)));
+    for _ in 0..NUM_OSCS {
+        oscs.push(Mutex::new(Oscillator::new()));
     }
     let oscs = Arc::new(oscs);
-
-    let mut samps_iter = 0;
-    let mut rx = tx.subscribe();
 
     let stream_oscs = Arc::clone(&oscs);
 
@@ -81,7 +93,7 @@ where
         config,
         move |data: &mut [T], _: &cpal::OutputCallbackInfo| {
             let stream_oscs = Arc::clone(&stream_oscs);
-            output(data, channels, stream_oscs, tx.to_owned(), &mut samps_iter)
+            output(data, channels, stream_oscs)
         },
         |err| eprintln!("Stream error: {}", err),
         None,
@@ -90,6 +102,8 @@ where
     let stream = StreamWrapper{ stream };
 
     stream.stream.play()?;
+
+    let mut rx = tx.subscribe();
 
     loop { tokio::select! {
         Ok(msg) = rx.recv() => {
@@ -115,7 +129,7 @@ where
                 Message::Mode(i, m) => {
                     oscs[i].lock().unwrap().set_mode(m);
                 }
-                Message::NoteOn(pitch, velocity) => unsafe {
+                Message::NoteOn{pitch, velocity: _} => {
                     oscs.iter().for_each(|osc| {
                         let mut lock = osc.lock().unwrap();
                         if lock.get_mode() == Mode::MIDI {
@@ -124,7 +138,7 @@ where
                         }
                     })
                 }
-                Message::NoteOff(pitch) => {
+                Message::NoteOff{pitch} => {
                     oscs.iter().for_each(|osc| {
                         let mut lock = osc.lock().unwrap();
                         if lock.get_mode() == Mode::MIDI {
@@ -149,12 +163,13 @@ where
     }}
 }
 
+/// Callback for `cpal::Stream` used by [`run()`].
+/// 
+/// This function generates and outputs to the audio device each sample.
 fn output<T>(
     output: &mut [T],
     channels: usize,
     oscs: Arc<Vec<Mutex<Oscillator>>>,
-    tx: Sender<Message>,
-    samps_iter: &mut u32
 )
 where
     T: SizedSample + FromSample<f64> + Display
@@ -178,26 +193,5 @@ where
         for sample in frame.iter_mut() {
             *sample = value;
         }
-    }
-}
-
-fn get_host() -> Host {
-    cpal::default_host()
-}
-
-
-
-#[cfg(test)]
-mod tests {
-    use cpal::traits::HostTrait;
-
-    use super::*;
-
-    #[test]
-    fn device_is_available() {
-        let host = get_host();
-        let device = host.default_output_device();
-
-        assert!(device.is_some(), "Failed to acquire output device");
     }
 }

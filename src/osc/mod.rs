@@ -13,8 +13,11 @@ static mut TRI_TABLE:       [f64; TABLE_LENGTH] = [0.0; TABLE_LENGTH];
 
 /// Calculate [`TABLE_LENGTH`] samples for each [`Waveform`] at startup, storing
 /// in a static array that can be used to oscillate later via indexing rather
-/// than by more taxing calculations throughout execution.
-pub unsafe fn init_tables() -> Result<(), &'static str> {
+/// than by more taxing calculations throughout execution. See the implementation
+/// of [`Oscillator::calc()`].
+/// 
+/// [`Oscillator::calc()`]: oscillator::Oscillator::calc()
+pub unsafe fn init_tables() {
     for i in 0..TABLE_LENGTH {
         let delta = i as f64 / TABLE_LENGTH as f64;
             
@@ -23,6 +26,4 @@ pub unsafe fn init_tables() -> Result<(), &'static str> {
         SQUARE_TABLE[i] = Waveform::Square.calc(delta, 1.0);
         TRI_TABLE[i] = Waveform::Triangle.calc(delta, 1.0);
     }
-
-    Ok(())
 }
