@@ -66,6 +66,10 @@ pub fn run(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
         }
     });
 
+    main_window.global::<Util>().on_set_precision(|value, precision| {
+        format!("{value:.0$}", usize::try_from(precision).unwrap_or(0)).into()
+    });
+
     main_window.run()?;
 
     tx.send(Message::Quit())?;

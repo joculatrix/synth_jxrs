@@ -82,7 +82,7 @@ impl Amplifier {
     /// MIDI signals sent to this `Amplifier`.
     /// 
     /// The growth and decay of amplitude during `attack`, `decay`, and `release` are linear. Note also that
-    /// if `self.adsr.decay > 0.0', the starting amplitude, or the amplitude reached by the end of the `attack`
+    /// if `self.adsr.decay > 0.0`, the starting amplitude, or the amplitude reached by the end of the `attack`
     /// duration if there is one, is 1.0, allowing for the amplitude to decrease towards the `sustain` amplitude.
     /// 
     /// If no notes are held, and a duration greater than 'self.adsr.release' has passed, this function

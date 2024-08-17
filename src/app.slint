@@ -2,6 +2,10 @@ import { ComboBox, HorizontalBox, LineEdit, TabWidget, Switch } from "std-widget
 
     export enum OscProps { attack, bypass, decay, freq, gain, mode, release, sustain, waveform }
 
+    export global Util {
+        pure callback set_precision(float, int) -> string;
+    }
+
     component ChangeObserver {
         in property <int> value;
         pure callback changed(int, float) -> float;
@@ -96,6 +100,7 @@ import { ComboBox, HorizontalBox, LineEdit, TabWidget, Switch } from "std-widget
     component Knob inherits Rectangle {
         in property <length> thickness: 10px;
         in property <length> size: 250px;
+        in property <int> precision: 2;
         in-out property <float> progress;
         in-out property <float> value;
         in property <color> accent-color: blue;
@@ -163,7 +168,8 @@ import { ComboBox, HorizontalBox, LineEdit, TabWidget, Switch } from "std-widget
             } // Rectangle
             input_field := LineEdit {
                 width: root.size / 3;
-                placeholder-text: "\{round(root.value)}";
+                input-type: decimal;
+                placeholder-text: Util.set_precision(root.value, root.precision);
 
                 accepted(s) => {
                     root.text_input_accepted(s);
