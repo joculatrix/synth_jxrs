@@ -1,6 +1,6 @@
 import { ComboBox, HorizontalBox, LineEdit, TabWidget, Switch } from "std-widgets.slint";
 
-    export enum OscProps { attack, bypass, decay, freq, gain, mode, release, sustain, waveform }
+    export enum OscProps { attack, bypass, decay, freq, gain, master, mode, release, sustain, waveform }
 
     export global Util {
         pure callback set_precision(float, int) -> string;
@@ -391,28 +391,54 @@ import { ComboBox, HorizontalBox, LineEdit, TabWidget, Switch } from "std-widget
     }
 
     export component MainWindow inherits Window {
+        property <float> master: 1.0;
+
         pure callback prop_changed(int, OscProps, float);
 
-        HorizontalBox {
-            osc1 := Oscillator {
-                accent-color: @linear-gradient(0deg, #0768b8 20%, #16b4e4 90%);
+        GridLayout {
+            Row {
+                master_gain := Knob {
+                    value <=> root.master;
+                    progress: (self.value + 60) / 60;
 
-                changed(prop, val) => {
-                    root.prop_changed(0, prop, val);
+                    size: 200px;
+                    accent-color: white;
+
+                    changed => {
+                        self.value = self.progress * 60 - 60;
+                        root.prop_changed(0, OscProps.master, self.value);
+                    }
+                    double-clicked => {
+                        self.value = 0;
+                        self.progress = (self.value + 60) / 60;
+                    }
+                    text_input_accepted(s) => {
+                        self.value = max(-60, min(0, s.to-float()));
+                        self.progress = (self.value + 60) / 60;
+                    }
                 }
             }
-            osc2 := Oscillator {
-                accent-color: @linear-gradient(0deg, #aa0a6d 20%, #db2cc4 90%);
-
-                changed(prop, val) => {
-                    root.prop_changed(1, prop, val);
+            Row {
+                osc1 := Oscillator {
+                    accent-color: @linear-gradient(0deg, #0768b8 20%, #16b4e4 90%);
+    
+                    changed(prop, val) => {
+                        root.prop_changed(0, prop, val);
+                    }
                 }
-            }
-            osc3 := Oscillator {
-                accent-color: @linear-gradient(0deg, #da460c 20%, #e76a17 90%);
-
-                changed(prop, val) => {
-                    root.prop_changed(2, prop, val);
+                osc2 := Oscillator {
+                    accent-color: @linear-gradient(0deg, #aa0a6d 20%, #db2cc4 90%);
+    
+                    changed(prop, val) => {
+                        root.prop_changed(1, prop, val);
+                    }
+                }
+                osc3 := Oscillator {
+                    accent-color: @linear-gradient(0deg, #da460c 20%, #e76a17 90%);
+    
+                    changed(prop, val) => {
+                        root.prop_changed(2, prop, val);
+                    }
                 }
             }
         }

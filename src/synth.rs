@@ -3,6 +3,7 @@ use crate::*;
 
 use cpal::{traits::{DeviceTrait, HostTrait, StreamTrait}, FromSample, SizedSample, Stream};
 use message::Message;
+use mixer::Mixer;
 use osc::oscillator::Mode;
 use tokio::sync::broadcast::Sender;
 
@@ -78,22 +79,26 @@ where
         super::SAMPLE_RATE = config.sample_rate.0 as f64;
         osc::init_tables();
     }
-
     let channels = config.channels as usize;
 
+    // initialize oscillators
     let mut oscs = Vec::with_capacity(NUM_OSCS);
     for _ in 0..NUM_OSCS {
         oscs.push(Mutex::new(Oscillator::new()));
     }
     let oscs = Arc::new(oscs);
-
     let stream_oscs = Arc::clone(&oscs);
+
+    // initialize mixer
+    let mut mixer = Arc::new(Mutex::new(Mixer::new()));
+    let stream_mixer = Arc::clone(&mixer);
 
     let stream = device.build_output_stream(
         config,
         move |data: &mut [T], _: &cpal::OutputCallbackInfo| {
+            let stream_mixer = Arc::clone(&stream_mixer);
             let stream_oscs = Arc::clone(&stream_oscs);
-            output(data, channels, stream_oscs)
+            output(stream_mixer, data, channels, stream_oscs)
         },
         |err| eprintln!("Stream error: {}", err),
         None,
@@ -125,6 +130,9 @@ where
                 }
                 Message::Gain(i, g) => {
                     oscs[i].lock().unwrap().amp.set_gain(g);
+                }
+                Message::Master(g) => {
+                    mixer.lock().unwrap().set_gain(g);
                 }
                 Message::Mode(i, m) => {
                     oscs[i].lock().unwrap().set_mode(m);
@@ -167,6 +175,7 @@ where
 /// 
 /// This function generates and outputs to the audio device each sample.
 fn output<T>(
+    mixer: Arc<Mutex<Mixer>>,
     output: &mut [T],
     channels: usize,
     oscs: Arc<Vec<Mutex<Oscillator>>>,
@@ -181,17 +190,22 @@ where
             let amp = oscs[i].lock().unwrap().calc();
             amps[i] = amp;
         }
-        
-        let mut value: f64 = 0.0;
 
+        let mut value: f64 = 0.0;
         for amp in amps {
             value += amp;
         }
-
-        let value = T::from_sample(0.3 * value);
+        let value = T::from_sample(
+            mixer.lock().unwrap().calc(0.3 * value)
+        );
 
         for sample in frame.iter_mut() {
             *sample = value;
         }
     }
+}
+
+/// Converts a gain value measured in decibels (`db`) to an amplitude value.
+pub fn db_to_amp(db: f64) -> f64 {
+    f64::powf(10.0, db / 20.0)
 }

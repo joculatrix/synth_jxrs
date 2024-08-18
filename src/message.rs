@@ -28,6 +28,10 @@ pub enum Message {
     Freq(usize, f64),
     /// Sent by the UI in [`app`] to modify the `gain` value of an [`Oscillator`]'s [`Amplifier`].
     Gain(usize, f64),
+    /// Sent by the UI in [`app`] to modify the master gain of the [`Mixer`].
+    /// 
+    /// [`Mixer`]:  crate::mixer::Mixer
+    Master(f64),
     /// Sent by the UI in [`app`] to modify the `mode` value of an [`Oscillator`].
     Mode(usize, oscillator::Mode), 
     /// Sent by [`midi`] to signal a MIDI note-on. Velocity is currently unused.

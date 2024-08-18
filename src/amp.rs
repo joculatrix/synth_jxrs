@@ -138,16 +138,11 @@ impl Amplifier {
 
     /// Modifies the `gain` property of `self`.
     /// 
-    /// The value of `gain_gb` argument should be measured in dB. Often this value is between -60 and 0.
+    /// The value of the `gain_gb` argument should be measured in dB. Often this value is between -60 and 0.
     /// The gain in dB will be converted to an amplitude modifier between 0.0 and 1.0 before assignment.
     pub fn set_gain(&mut self, gain_db: f64) {
-        self.gain = db_to_amp(gain_db);
+        self.gain = crate::synth::db_to_amp(gain_db);
     }
-}
-
-/// Converts a gain value measured in decibels (`db`) to an amplitude value.
-fn db_to_amp(db: f64) -> f64 {
-    f64::powf(10.0, db / 20.0)
 }
 
 

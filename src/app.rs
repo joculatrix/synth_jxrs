@@ -39,6 +39,9 @@ pub fn run(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
             OscProps::Gain => {
                 tx_clone.send(Message::Gain(index, value.into()));
             }
+            OscProps::Master => {
+                tx_clone.send(Message::Master(value.into()));
+            }
             OscProps::Mode => unsafe {
                 let value = match value.to_int_unchecked() {
                     0 => oscillator::Mode::Freq,
