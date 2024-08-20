@@ -50,7 +50,7 @@ import { ComboBox, HorizontalBox, LineEdit, TabWidget, Switch } from "std-widget
         in property <length> thickness;
         in property <float> size;
 
-        stroke: @linear-gradient(0deg, #232629 20%, #393c40 90%);
+        stroke: @linear-gradient(0deg, #232629 0%, #393c40 100%);
         stroke-width: thickness;
 
         viewbox-width: size;
@@ -126,7 +126,7 @@ import { ComboBox, HorizontalBox, LineEdit, TabWidget, Switch } from "std-widget
                 width: root.size / 2;
                 height: root.size / 2;
                 border-radius: size/2;
-                background: @linear-gradient(0deg, #4f5d6e 20%, #939aa3 90%);
+                background: @linear-gradient(0deg, #4f5d6e 0%, #939aa3 100%);
 
                 KnobBackground {
                     thickness: root.thickness;
@@ -195,7 +195,7 @@ import { ComboBox, HorizontalBox, LineEdit, TabWidget, Switch } from "std-widget
         pure callback changed(OscProps, float);
 
         border-radius: 10px;
-        background: @linear-gradient(0deg, #4f5d6e 20%, #939aa3 90%);
+        background: @linear-gradient(0deg, #4f5d6e 0%, #939aa3 100%);
 
         GridLayout {
             padding: 10px;
@@ -251,6 +251,7 @@ import { ComboBox, HorizontalBox, LineEdit, TabWidget, Switch } from "std-widget
                 amp := Rectangle {
                     border-color: #3b4757;
                     border-width: 2px;
+                    min-height: 480px;
 
                     VerticalLayout {
                         padding: 5px;
@@ -258,7 +259,7 @@ import { ComboBox, HorizontalBox, LineEdit, TabWidget, Switch } from "std-widget
                         alignment: center;
 
                         gain_knob := Knob {
-                            text: "GAIN";
+                            text: "GAIN (dB)";
                             value <=> root.gain;
                             progress: (self.value + 60) / 60;
 
@@ -283,7 +284,7 @@ import { ComboBox, HorizontalBox, LineEdit, TabWidget, Switch } from "std-widget
 
                             Row {
                                 attack_knob := Knob {
-                                    text: "ATTACK(ms)";
+                                    text: "ATTACK (ms)";
                                     value <=> root.attack;
                                     progress: self.value / 1000;
 
@@ -304,7 +305,7 @@ import { ComboBox, HorizontalBox, LineEdit, TabWidget, Switch } from "std-widget
                                     }
                                 } // attack_knob
                                 decay_knob := Knob {
-                                    text: "DECAY(ms)";
+                                    text: "DECAY (ms)";
                                     value <=> root.decay;
                                     progress: self.value / 1000;
 
@@ -348,7 +349,7 @@ import { ComboBox, HorizontalBox, LineEdit, TabWidget, Switch } from "std-widget
                                     }
                                 } // sustain_knob
                                 release_knob := Knob {
-                                    text: "RELEASE(ms)";
+                                    text: "RELEASE (ms)";
                                     value <=> root.release;
                                     progress: self.value / 1000;
 
@@ -395,46 +396,57 @@ import { ComboBox, HorizontalBox, LineEdit, TabWidget, Switch } from "std-widget
 
         pure callback prop_changed(int, OscProps, float);
 
+        background: @linear-gradient(0deg, #000000 0%, #232629 100%);
+
         GridLayout {
+            padding: 20px;
+            spacing: 10px;
+            spacing-vertical: 20px;
+
             Row {
-                master_gain := Knob {
-                    value <=> root.master;
-                    progress: (self.value + 60) / 60;
+                HorizontalLayout {
+                    alignment: space-between;
 
-                    size: 200px;
-                    accent-color: white;
-
-                    changed => {
-                        self.value = self.progress * 60 - 60;
-                        root.prop_changed(0, OscProps.master, self.value);
-                    }
-                    double-clicked => {
-                        self.value = 0;
-                        self.progress = (self.value + 60) / 60;
-                    }
-                    text_input_accepted(s) => {
-                        self.value = max(-60, min(0, s.to-float()));
-                        self.progress = (self.value + 60) / 60;
+                    master_gain := Knob {
+                        text: "MASTER (dB)";
+                        value <=> root.master;
+                        progress: (self.value + 60) / 60;
+    
+                        size: 150px;
+                        accent-color: white;
+    
+                        changed => {
+                            self.value = self.progress * 60 - 60;
+                            root.prop_changed(0, OscProps.master, self.value);
+                        }
+                        double-clicked => {
+                            self.value = 0;
+                            self.progress = (self.value + 60) / 60;
+                        }
+                        text_input_accepted(s) => {
+                            self.value = max(-60, min(0, s.to-float()));
+                            self.progress = (self.value + 60) / 60;
+                        }
                     }
                 }
             }
             Row {
                 osc1 := Oscillator {
-                    accent-color: @linear-gradient(0deg, #0768b8 20%, #16b4e4 90%);
+                    accent-color: @linear-gradient(0deg, #0768b8 0%, #16b4e4 100%);
     
                     changed(prop, val) => {
                         root.prop_changed(0, prop, val);
                     }
                 }
                 osc2 := Oscillator {
-                    accent-color: @linear-gradient(0deg, #aa0a6d 20%, #db2cc4 90%);
+                    accent-color: @linear-gradient(0deg, #aa0a6d 0%, #db2cc4 100%);
     
                     changed(prop, val) => {
                         root.prop_changed(1, prop, val);
                     }
                 }
                 osc3 := Oscillator {
-                    accent-color: @linear-gradient(0deg, #da460c 20%, #e76a17 90%);
+                    accent-color: @linear-gradient(0deg, #da460c 0%, #e76a17 100%);
     
                     changed(prop, val) => {
                         root.prop_changed(2, prop, val);
