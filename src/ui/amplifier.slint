@@ -77,24 +77,24 @@ export component Amplifier inherits Rectangle {
                 alignment: center;
 
                 attack_knob := Knob {
-                    text: "ATTACK (ms)";
+                    text: "ATTACK";
                     value <=> root.attack;
-                    progress: self.value / 1000;
+                    progress: self.value / 20;
     
                     size: 150px;
                     accent-color: root.accent-color;
     
                     changed => {
-                        self.value = self.progress * 1000;
-                        root.changed(AmpProps.attack, attack_knob.value / 100);
+                        self.value = self.progress * 20;
+                        root.changed(AmpProps.attack, attack_knob.value);
                     }
                     double-clicked => {
                         self.value = 0;
-                        self.progress = self.value / 1000;
+                        self.progress = self.value / 20;
                     }
                     text_input_accepted(s) => {
-                        self.value = max(0, min(1000, s.to-float()));
-                        self.progress = self.value / 1000;
+                        self.value = max(0, min(20, s.to-float()));
+                        self.progress = self.value / 20;
                     }
                 } // attack_knob
                 sustain_knob := Knob {
@@ -124,45 +124,45 @@ export component Amplifier inherits Rectangle {
                 alignment: center;
 
                 decay_knob := Knob {
-                    text: "DECAY (ms)";
+                    text: "DECAY";
                     value <=> root.decay;
-                    progress: self.value / 1000;
+                    progress: self.value / 20;
     
                     size: 150px;
                     accent-color: root.accent-color;
     
                     changed => {
-                        self.value = self.progress * 1000;
-                        root.changed(AmpProps.decay, self.value / 100);
+                        self.value = self.progress * 20;
+                        root.changed(AmpProps.decay, self.value);
                     }
                     double-clicked => {
                         self.value = 0;
-                        self.progress = self.value / 1000;
+                        self.progress = self.value / 20;
                     }
                     text_input_accepted(s) => {
-                        self.value = max(0, min(1000, s.to-float()));
-                        self.progress = self.value / 1000;
+                        self.value = max(0, min(20, s.to-float()));
+                        self.progress = self.value / 20;
                     }
                 } // decay_knob
                 release_knob := Knob {
-                    text: "RELEASE (ms)";
+                    text: "RELEASE";
                     value <=> root.release;
-                    progress: self.value / 1000;
+                    progress: self.value / 20;
 
                     size: 150px;
                     accent-color: root.accent-color;
 
                     changed => {
-                        self.value = self.progress * 1000;
-                        root.changed(AmpProps.release, self.value / 100);
+                        self.value = self.progress * 20;
+                        root.changed(AmpProps.release, self.value);
                     }
                     double_clicked => {
                         self.value = 0;
-                        self.progress = self.value / 1000;
+                        self.progress = self.value / 20;
                     }
                     text_input_accepted(s) => {
-                        self.value = max(0, min(1000, s.to-float()));
-                        self.progress = self.value / 1000;
+                        self.value = max(0, min(20, s.to-float()));
+                        self.progress = self.value / 20;
                     }
                 } // release_knob
             }

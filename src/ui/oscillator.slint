@@ -55,10 +55,10 @@ export component Oscillator inherits Rectangle {
                 Tab { // 1
                     title: "Constant";
                     freq_knob := Knob {
-                        text: "FREQUENCY (HZ)";
+                        text: "FREQ";
                         value <=> root.frequency;
                         progress: ((self.value) - 10.0) * 0.0005;
-                        size: 200px;
+                        size: 150px;
                         accent-color: root.accent-color;
 
                         changed => {
