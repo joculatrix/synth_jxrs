@@ -1,0 +1,211 @@
+import { ComboBox, Switch, TabWidget } from "std-widgets.slint";
+import { ChangeObserver, OscProps } from "utilities.slint";
+import { Knob } from "knob.slint";
+
+export component Oscillator inherits Rectangle {
+    in-out property <float> frequency: 440;
+    in-out property <float> gain: 0;
+    in-out property <float> attack: 0;
+    in-out property <float> decay: 0;
+    in-out property <float> sustain: 1;
+    in-out property <float> release: 0;
+    in property <color> accent-color: blue;
+
+    pure callback changed(OscProps, float);
+
+    border-radius: 10px;
+    background: @linear-gradient(0deg, #4f5d6e 0%, #939aa3 100%);
+
+    GridLayout {
+        padding: 10px;
+        spacing: 10px;
+
+        Row {
+            Switch {
+                toggled => {
+                    // switch on = oscillator on, bypass off; switch off = oscillator off, bypass on
+                    self.checked ? root.changed(OscProps.bypass, 0) : root.changed(OscProps.bypass, 1);
+                }
+            }
+            ComboBox {
+                model: ["Noise", "Saw", "Sine", "Square", "Triangle"];
+                current-value: "Sine";
+
+                selected(s) => {
+                    root.changed(OscProps.waveform, self.current-index);
+                }
+            }
+        } // Row [0]
+
+        Row {
+            tabs := TabWidget {
+                Tab { // 0
+                    title: "Freq";
+                    freq_knob := Knob {
+                        text: "FREQUENCY (HZ)";
+                        value <=> root.frequency;
+                        progress: ((self.value) - 10.0) * 0.0005;
+                        size: 200px;
+                        accent-color: root.accent-color;
+
+                        changed => {
+                            self.value = self.progress / 0.0005 + 10.0;
+                            root.changed(OscProps.freq, self.value);
+                        }
+                        double-clicked => {
+                            self.value = 440;
+                            self.progress = ((self.value) - 10.0) * 0.0005;
+                        }
+                        text_input_accepted(s) => {
+                            self.value = max(10, (min(2010, s.to-float())));
+                            self.progress = ((self.value) - 10.0) * 0.0005;
+                        }
+                    }
+                }
+                Tab { // 1
+                    title: "MIDI";
+                }
+            } // tabs
+
+            amp := Rectangle {
+                border-color: #3b4757;
+                border-width: 2px;
+                min-height: 480px;
+
+                VerticalLayout {
+                    padding: 5px;
+                    spacing: 20px;
+                    alignment: center;
+
+                    gain_knob := Knob {
+                        text: "GAIN (dB)";
+                        value <=> root.gain;
+                        progress: (self.value + 60) / 60;
+
+                        size: 200px;
+                        accent-color: root.accent-color;
+
+                        changed => {
+                            self.value = self.progress * 60 - 60;
+                            root.changed(OscProps.gain, self.value);
+                        }
+                        double-clicked => {
+                            self.value = 0;
+                            self.progress = (self.value + 60) / 60;
+                        }
+                        text_input_accepted(s) => {
+                            self.value = max(-60, min(0, s.to-float()));
+                            self.progress = (self.value + 60) / 60;
+                        }
+                    }
+                    GridLayout {
+                        spacing: 10px;
+
+                        Row {
+                            attack_knob := Knob {
+                                text: "ATTACK (ms)";
+                                value <=> root.attack;
+                                progress: self.value / 1000;
+
+                                size: 150px;
+                                accent-color: root.accent-color;
+
+                                changed => {
+                                    self.value = self.progress * 1000;
+                                    root.changed(OscProps.attack, attack_knob.value / 100);
+                                }
+                                double-clicked => {
+                                    self.value = 0;
+                                    self.progress = self.value / 1000;
+                                }
+                                text_input_accepted(s) => {
+                                    self.value = max(0, min(1000, s.to-float()));
+                                    self.progress = self.value / 1000;
+                                }
+                            } // attack_knob
+                            decay_knob := Knob {
+                                text: "DECAY (ms)";
+                                value <=> root.decay;
+                                progress: self.value / 1000;
+
+                                size: 150px;
+                                accent-color: root.accent-color;
+
+                                changed => {
+                                    self.value = self.progress * 1000;
+                                    root.changed(OscProps.decay, self.value / 100);
+                                }
+                                double-clicked => {
+                                    self.value = 0;
+                                    self.progress = self.value / 1000;
+                                }
+                                text_input_accepted(s) => {
+                                    self.value = max(0, min(1000, s.to-float()));
+                                    self.progress = self.value / 1000;
+                                }
+                            } // decay_knob
+                        }
+                        Row {
+                            sustain_knob := Knob {
+                                text: "SUSTAIN";
+                                value <=> root.sustain;
+                                progress: self.value;
+
+                                size: 150px;
+                                accent-color: root.accent-color;
+
+                                changed => {
+                                    self.value = self.progress;
+                                    root.changed(OscProps.sustain, self.value);
+                                }
+                                double_clicked => {
+                                    self.value = 1;
+                                    self.progress = self.value;
+                                }
+                                text_input_accepted(s) => {
+                                    self.value = max(0, min(1, s.to-float()));
+                                    self.progress = self.value;
+                                }
+                            } // sustain_knob
+                            release_knob := Knob {
+                                text: "RELEASE (ms)";
+                                value <=> root.release;
+                                progress: self.value / 1000;
+
+                                size: 150px;
+                                accent-color: root.accent-color;
+
+                                changed => {
+                                    self.value = self.progress * 1000;
+                                    root.changed(OscProps.release, self.value / 100);
+                                }
+                                double_clicked => {
+                                    self.value = 0;
+                                    self.progress = self.value / 1000;
+                                }
+                                text_input_accepted(s) => {
+                                    self.value = max(0, min(1000, s.to-float()));
+                                    self.progress = self.value / 1000;
+                                }
+                            } // release_knob
+                        }
+                    }
+                }
+            } // amp
+
+        }
+    } // GridLayout
+
+    // Slint's built-in TabWidget has no callback for listening for the active tab to
+    // change. This solution is thanks to user maurges's solution in discussion post #4717
+    // on Slint's GitHub repository.
+    ChangeObserver {
+        value: tabs.current-index;
+
+        changed(v, f) => {
+            root.changed(OscProps.mode, v);
+
+            return f;
+        }
+    }
+}

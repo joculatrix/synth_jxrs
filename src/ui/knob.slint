@@ -1,0 +1,171 @@
+import { LineEdit } from "std-widgets.slint";
+import { Logic } from "utilities.slint";
+
+component KnobBackground inherits Path {
+    in property <length> thickness;
+    in property <float> size;
+
+    stroke: black;
+    stroke-width: thickness;
+
+    viewbox-width: size;
+    viewbox-height: size;
+
+    // path just constructs a circle outline:
+
+    MoveTo {
+        x: size / 2;
+        y: size;
+    }
+    ArcTo {
+        sweep: true;
+        radius-x: size / 2;
+        radius-y: size / 2;
+        x: size / 2;
+        y: 0;
+    }
+    ArcTo {
+        sweep: true;
+        radius-x: size / 2;
+        radius-y: size / 2;
+        x: size / 2;
+        y: size;
+    }
+}
+
+component KnobEmpty inherits Path {
+    in property <length> thickness;
+    in property <float> size;
+
+    stroke: @linear-gradient(0deg, #232629 0%, #393c40 100%);
+    stroke-width: thickness;
+
+    viewbox-width: size;
+    viewbox-height: size;
+
+    MoveTo {
+        x: size / 2;
+        y: size;
+    }
+    ArcTo {
+        large-arc: true;
+        sweep: true;
+        radius-x: size / 2;
+        radius-y: size / 2;
+        x: size;
+        y: size / 2;
+    }
+}
+
+component KnobFill inherits Path {
+    in property <length> thickness;
+    in property <float> size;
+    in property <float> progress;
+    in property <color> color;
+
+    stroke: color;
+    stroke-width: thickness;
+
+    viewbox-width: size;
+    viewbox-height: size;
+    MoveTo {
+        x: size / 2;
+        y: size;
+    }
+    // draw a section of a (near) circle from the bottom of the knob to the appropriate value:
+    ArcTo {
+        // this large-arc assignment helps keep the curve mostly aligned to the circle
+        large-arc: progress >= 0.67 ? true : false;
+        sweep: true;
+        radius-x: size / 2;
+        radius-y: size / 2;
+        x: (size / 2) - (size / 2) * sin(progress * 270deg);
+        y: (size / 2) + (size / 2) * cos(progress * 270deg);
+    }
+}
+
+export component Knob inherits Rectangle {
+    in property <length> thickness: 10px;
+    in property <length> size: 250px;
+    in property <int> precision: 2;
+    in-out property <float> progress;
+    in-out property <float> value;
+    in property <color> accent-color: blue;
+    in property <string> text;
+
+    callback changed;
+    callback double-clicked;
+    callback text_input_accepted(string);
+
+    width: size / 2 + 10px;
+    height: size / 2 + 50px;
+
+    VerticalLayout {
+        spacing: 5px;
+        padding: 5px; 
+        alignment: center;
+
+        Text {
+            horizontal-alignment: center;
+            text: root.text;
+        }
+        Rectangle {
+            width: root.size / 2;
+            height: root.size / 2;
+            border-radius: size/2;
+            background: @linear-gradient(0deg, #4f5d6e 0%, #939aa3 100%);
+
+            KnobBackground {
+                thickness: root.thickness;
+                size: root.size / 1px;
+            }
+            KnobEmpty {
+                thickness: root.thickness;
+                size: root.size / 1px;
+            }
+            KnobFill {
+                thickness: root.thickness;
+                size: root.size / 1px;
+                progress <=> root.progress;
+                color: root.accent-color;
+            }
+            Rectangle {
+                // TODO: this math technically works ok, but isn't perfect. workshop better solutions
+                background: root.accent-color;
+                width: root.size / 35;
+                height: root.size / 35;
+                border-radius: self.width / 2;
+
+                x: ((root.size / 4) - sin(root.progress * 270deg) * (root.size / 6)) - (self.width / 2);
+                y: ((root.size / 4) + cos(root.progress * 270deg) * (root.size / 6)) - (self.height / 2);
+            }
+            area := TouchArea {
+                height: root.size / 2 - 40px;
+
+                moved => {
+                    root.progress = self.mouse-y > self.pressed-y ?
+                        max(0.0, (root.progress) - ((self.mouse-y) - self.pressed-y) / 5000px)
+                        : min(1.0, root.progress + ((self.pressed-y) - self.mouse-y) / 5000px);
+                    root.changed();
+                }
+                double-clicked => {
+                    root.double-clicked();
+                }
+            }
+        } // Rectangle
+        input_field := LineEdit {
+            width: root.size / 3;
+            input-type: decimal;
+            placeholder-text: Logic.set_precision(root.value, root.precision);
+
+            accepted(s) => {
+                root.text_input_accepted(s);
+                self.text = ""; // clears the editing text, allowing the placeholder text to update again
+                fs.focus(); // takes focus from the text field
+                root.changed();
+            }
+        }
+    }
+
+    fs := FocusScope { } // hacky solution to remove focus from other elements
+}

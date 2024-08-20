@@ -1,0 +1,69 @@
+import { Oscillator } from "oscillator.slint";
+import { OscProps, Logic } from "utilities.slint";
+import { Knob } from "knob.slint";
+
+export component MainWindow inherits Window {
+    property <float> master: 1.0;
+
+    pure callback prop_changed(int, OscProps, float);
+    pure callback set_precision <=> Logic.set_precision;
+
+    background: @linear-gradient(0deg, #000000 0%, #232629 100%);
+
+    GridLayout {
+        padding: 20px;
+        spacing: 10px;
+        spacing-vertical: 20px;
+
+        Row {
+            HorizontalLayout {
+                alignment: space-between;
+
+                master_gain := Knob {
+                    text: "MASTER (dB)";
+                    value <=> root.master;
+                    progress: (self.value + 60) / 60;
+    
+                    size: 150px;
+                    accent-color: white;
+    
+                    changed => {
+                        self.value = self.progress * 60 - 60;
+                        root.prop_changed(0, OscProps.master, self.value);
+                    }
+                    double-clicked => {
+                        self.value = 0;
+                        self.progress = (self.value + 60) / 60;
+                    }
+                    text_input_accepted(s) => {
+                        self.value = max(-60, min(0, s.to-float()));
+                        self.progress = (self.value + 60) / 60;
+                    }
+                }
+            }
+        }
+        Row {
+            osc1 := Oscillator {
+                accent-color: @linear-gradient(0deg, #0768b8 0%, #16b4e4 100%);
+    
+                changed(prop, val) => {
+                    root.prop_changed(0, prop, val);
+                }
+            }
+            osc2 := Oscillator {
+                accent-color: @linear-gradient(0deg, #aa0a6d 0%, #db2cc4 100%);
+    
+                changed(prop, val) => {
+                    root.prop_changed(1, prop, val);
+                }
+            }
+            osc3 := Oscillator {
+                accent-color: @linear-gradient(0deg, #da460c 0%, #e76a17 100%);
+    
+                changed(prop, val) => {
+                    root.prop_changed(2, prop, val);
+                }
+            }
+        }
+    }
+}

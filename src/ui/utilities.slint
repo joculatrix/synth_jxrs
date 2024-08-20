@@ -1,0 +1,13 @@
+export enum OscProps { attack, bypass, decay, freq, gain, master, mode, release, sustain, waveform }
+
+export global Logic {
+    pure callback set_precision(float, int) -> string;
+}
+
+export component ChangeObserver {
+    in property <int> value;
+    pure callback changed(int, float) -> float;
+
+    width: 0; height: 0; visible: false;
+    opacity: changed(value, 1);
+}
