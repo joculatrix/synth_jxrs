@@ -37,7 +37,7 @@ component KnobEmpty inherits Path {
     in property <length> thickness;
     in property <float> size;
 
-    stroke: @linear-gradient(0deg, #232629 0%, #393c40 100%);
+    stroke: #181b1d;
     stroke-width: thickness;
 
     viewbox-width: size;
@@ -98,7 +98,7 @@ export component Knob inherits Rectangle {
     callback text_input_accepted(string);
 
     width: size / 2 + 10px;
-    height: size / 2 + 50px;
+    height: size / 2 + 80px;
 
     VerticalLayout {
         spacing: 5px;
@@ -108,12 +108,14 @@ export component Knob inherits Rectangle {
         Text {
             horizontal-alignment: center;
             text: root.text;
+            stroke: black;
+            stroke-width: 0px;
         }
         Rectangle {
             width: root.size / 2;
             height: root.size / 2;
             border-radius: size/2;
-            background: @linear-gradient(0deg, #4f5d6e 0%, #939aa3 100%);
+            background: @linear-gradient(0deg, #191e24 0%, #242729 100%);
 
             KnobBackground {
                 thickness: root.thickness;
@@ -153,16 +155,20 @@ export component Knob inherits Rectangle {
                 }
             }
         } // Rectangle
-        input_field := LineEdit {
-            width: root.size / 3;
-            input-type: decimal;
-            placeholder-text: Logic.set_precision(root.value, root.precision);
-
-            accepted(s) => {
-                root.text_input_accepted(s);
-                self.text = ""; // clears the editing text, allowing the placeholder text to update again
-                fs.focus(); // takes focus from the text field
-                root.changed();
+        Rectangle {
+            input_field := LineEdit {
+                width: root.size / 3;
+                height: 24px;
+    
+                input-type: decimal;
+                placeholder-text: Logic.set_precision(root.value, root.precision);
+    
+                accepted(s) => {
+                    root.text_input_accepted(s);
+                    self.text = ""; // clears the editing text, allowing the placeholder text to update again
+                    fs.focus(); // takes focus from the text field
+                    root.changed();
+                }
             }
         }
     }

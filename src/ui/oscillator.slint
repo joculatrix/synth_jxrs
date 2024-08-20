@@ -11,7 +11,7 @@ export component Oscillator inherits Rectangle {
     pure callback changed(OscProps, float);
 
     border-radius: 10px;
-    background: @linear-gradient(0deg, #4f5d6e 0%, #939aa3 100%);
+    background: @linear-gradient(0deg, #191e24 0%, #242729 100%);
 
     GridLayout {
         padding: 10px;
@@ -23,6 +23,9 @@ export component Oscillator inherits Rectangle {
                 color: root.accent-color;
                 font-weight: 900;
                 font-size: 16px;
+
+                stroke: black;
+                stroke-width: 0px;
             }
         }
         Row {
@@ -73,25 +76,31 @@ export component Oscillator inherits Rectangle {
                     }
                 }
             } // tabs
-            gain_knob := Knob {
-                text: "GAIN (dB)";
-                value <=> root.gain;
-                progress: (self.value + 60) / 60;
+            gain_rect := Rectangle {
+                max-width: 250px;
 
-                size: 200px;
-                accent-color: root.accent-color;
+                gain_knob := Knob {
+                    text: "GAIN (dB)";
+                    value <=> root.gain;
+                    progress: (self.value + 60) / 60;
+    
+                    size: 200px;
+                    accent-color: root.accent-color;
 
-                changed => {
-                    self.value = self.progress * 60 - 60;
-                    root.changed(OscProps.gain, self.value);
-                }
-                double-clicked => {
-                    self.value = 0;
-                    self.progress = (self.value + 60) / 60;
-                }
-                text_input_accepted(s) => {
-                    self.value = max(-60, min(0, s.to-float()));
-                    self.progress = (self.value + 60) / 60;
+                    x: (gain_rect.width / 2) - (self.width / 2);
+    
+                    changed => {
+                        self.value = self.progress * 60 - 60;
+                        root.changed(OscProps.gain, self.value);
+                    }
+                    double-clicked => {
+                        self.value = 0;
+                        self.progress = (self.value + 60) / 60;
+                    }
+                    text_input_accepted(s) => {
+                        self.value = max(-60, min(0, s.to-float()));
+                        self.progress = (self.value + 60) / 60;
+                    }
                 }
             }
         }

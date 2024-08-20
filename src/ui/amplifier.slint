@@ -1,6 +1,6 @@
 import { Knob } from "knob.slint";
 import { AmpProps, ChangeObserver } from "utilities.slint";
-import { TabWidget } from "std-widgets.slint";
+import { TabWidget, VerticalBox } from "std-widgets.slint";
 
 export component Amplifier inherits Rectangle {
     in property <color> accent-color;
@@ -12,33 +12,37 @@ export component Amplifier inherits Rectangle {
 
     pure callback changed(AmpProps, float);
     border-radius: 10px;
-    background: @linear-gradient(0deg, #4f5d6e 0%, #939aa3 100%);
-    min-height: 480px;
+    background: @linear-gradient(0deg, #191e24 0%, #242729 100%);
+    min-height: 580px;
 
     VerticalLayout {
         padding: 10px;
-        spacing: 20px;
+        spacing: 10px;
         alignment: center;
 
-        gain_knob := Knob {
-            text: "GAIN (dB)";
-            value <=> root.gain;
-            progress: (self.value + 60) / 60;
+        HorizontalLayout {
+            alignment: center;
 
-            size: 200px;
-            accent-color: root.accent-color;
-
-            changed => {
-                self.value = self.progress * 60 - 60;
-                root.changed(AmpProps.gain, self.value);
-            }
-            double-clicked => {
-                self.value = 0;
-                self.progress = (self.value + 60) / 60;
-            }
-            text_input_accepted(s) => {
-                self.value = max(-60, min(0, s.to-float()));
-                self.progress = (self.value + 60) / 60;
+            gain_knob := Knob {
+                text: "GAIN (dB)";
+                value <=> root.gain;
+                progress: (self.value + 60) / 60;
+    
+                size: 200px;
+                accent-color: root.accent-color;
+    
+                changed => {
+                    self.value = self.progress * 60 - 60;
+                    root.changed(AmpProps.gain, self.value);
+                }
+                double-clicked => {
+                    self.value = 0;
+                    self.progress = (self.value + 60) / 60;
+                }
+                text_input_accepted(s) => {
+                    self.value = max(-60, min(0, s.to-float()));
+                    self.progress = (self.value + 60) / 60;
+                }
             }
         }
 
@@ -64,18 +68,22 @@ export component Amplifier inherits Rectangle {
             }
         }
 
-        GridLayout {
-            spacing: 10px;
+        HorizontalLayout {
+            spacing: 20px;
+            alignment: center;
 
-            Row {
+            VerticalLayout {
+                spacing: 10px;
+                alignment: center;
+
                 attack_knob := Knob {
                     text: "ATTACK (ms)";
                     value <=> root.attack;
                     progress: self.value / 1000;
-
+    
                     size: 150px;
                     accent-color: root.accent-color;
-
+    
                     changed => {
                         self.value = self.progress * 1000;
                         root.changed(AmpProps.attack, attack_knob.value / 100);
@@ -89,29 +97,6 @@ export component Amplifier inherits Rectangle {
                         self.progress = self.value / 1000;
                     }
                 } // attack_knob
-                decay_knob := Knob {
-                    text: "DECAY (ms)";
-                    value <=> root.decay;
-                    progress: self.value / 1000;
-
-                    size: 150px;
-                    accent-color: root.accent-color;
-
-                    changed => {
-                        self.value = self.progress * 1000;
-                        root.changed(AmpProps.decay, self.value / 100);
-                    }
-                    double-clicked => {
-                        self.value = 0;
-                        self.progress = self.value / 1000;
-                    }
-                    text_input_accepted(s) => {
-                        self.value = max(0, min(1000, s.to-float()));
-                        self.progress = self.value / 1000;
-                    }
-                } // decay_knob
-            }
-            Row {
                 sustain_knob := Knob {
                     text: "SUSTAIN";
                     value <=> root.sustain;
@@ -133,6 +118,32 @@ export component Amplifier inherits Rectangle {
                         self.progress = self.value;
                     }
                 } // sustain_knob
+            }
+            VerticalLayout {
+                spacing: 10px;
+                alignment: center;
+
+                decay_knob := Knob {
+                    text: "DECAY (ms)";
+                    value <=> root.decay;
+                    progress: self.value / 1000;
+    
+                    size: 150px;
+                    accent-color: root.accent-color;
+    
+                    changed => {
+                        self.value = self.progress * 1000;
+                        root.changed(AmpProps.decay, self.value / 100);
+                    }
+                    double-clicked => {
+                        self.value = 0;
+                        self.progress = self.value / 1000;
+                    }
+                    text_input_accepted(s) => {
+                        self.value = max(0, min(1000, s.to-float()));
+                        self.progress = self.value / 1000;
+                    }
+                } // decay_knob
                 release_knob := Knob {
                     text: "RELEASE (ms)";
                     value <=> root.release;
