@@ -31,7 +31,7 @@ pub struct Oscillator {
     /// Keeps track of the actively held MIDI pitches, allowing the `Oscillator` to return to the most recently pressed,
     /// still-held pitch when the one corresponding to the current frequency is released.
     midi_notes: Vec<u8>,
-    /// Determines which [`Mode`] the `Oscillator` is in.
+    /// Determines which [`OscMode`] the `Oscillator` is in.
     mode: OscMode,
     /// Modified and rounded to increment the index the `Oscillator` uses to access values from its [`Waveform`]'s
     /// corresponding table stored in [`osc`].
@@ -64,11 +64,11 @@ impl Oscillator {
     /// 
     /// If `self.bypass` is set to true, this value will be `0.0`. Otherwise, the `Oscillator` will look up
     /// the appropriate sample value for its [`Waveform`], increment its `phase`, and then apply any multipliers
-    /// offered by its [`Amplifier`]. If `self` is in [`Freq`] mode, this will only be the overall `gain` value,
+    /// offered by its [`Amplifier`]. If `self` is in [`Constant`] mode, this will only be the overall `gain` value,
     /// whereas in [`MIDI`] mode, [`Amplifier::calc()`] is called to shape the amplitude based on MIDI information.
     /// 
-    /// [`Freq`]:   Mode::Freq
-    /// [`MIDI`]:   Mode::MIDI
+    /// [`Constant`]:   OscMode::Constant
+    /// [`MIDI`]:   OscMode::MIDI
     pub fn calc(&mut self) -> f64 {
         if self.bypass {
             return 0.0;
