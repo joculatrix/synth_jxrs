@@ -90,7 +90,7 @@ where
     let stream_oscs = Arc::clone(&oscs);
 
     // initialize mixer
-    let mut mixer = Arc::new(Mutex::new(Mixer::new()));
+    let mixer = Arc::new(Mutex::new(Mixer::new()));
     let stream_mixer = Arc::clone(&mixer);
 
     let stream = device.build_output_stream(
