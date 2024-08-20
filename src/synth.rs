@@ -4,14 +4,14 @@ use crate::*;
 use cpal::{traits::{DeviceTrait, HostTrait, StreamTrait}, FromSample, SizedSample, Stream};
 use message::Message;
 use mixer::Mixer;
-use osc::oscillator::Mode;
+use osc::oscillator::OscMode;
 use tokio::sync::broadcast::Sender;
 
 /// The number of [`Oscillator`]s the synthesizer should have. Currently, this is a convenience identifier
 /// for a value that shouldn't be edited. In order for this number to have the power to quickly alter the
 /// program, [`app`] would have to be heavily refactored to allow Slint to dynamically and cleanly generate
 /// the UI for an arbitrary amount of oscillators.
-pub const NUM_OSCS: usize = 3;
+pub const NUM_OSCS: usize = 4;
 
 /// A table of MIDI pitch values `[0..127]` and their corresponding frequencies in Hz.
 /// 
@@ -116,50 +116,53 @@ where
                 Message::Quit() => {
                     return Ok(());
                 }
-                Message::Attack(i, a) => {
-                    oscs[i].lock().unwrap().amp.adsr.attack = a;
+                Message::Attack(a) => {
+                    mixer.lock().unwrap().amp.adsr.attack = a;
                 }
                 Message::Bypass(i, b) => {
                     oscs[i].lock().unwrap().bypass = b;
                 }
-                Message::Decay(i, d) => {
-                    oscs[i].lock().unwrap().amp.adsr.decay = d;
+                Message::Decay(d) => {
+                    mixer.lock().unwrap().amp.adsr.decay = d;
                 }
                 Message::Freq(i, f) => {
                     oscs[i].lock().unwrap().set_freq(f);
                 }
                 Message::Gain(i, g) => {
-                    oscs[i].lock().unwrap().amp.set_gain(g);
+                    oscs[i].lock().unwrap().set_gain(g);
                 }
                 Message::Master(g) => {
                     mixer.lock().unwrap().set_gain(g);
                 }
-                Message::Mode(i, m) => {
-                    oscs[i].lock().unwrap().set_mode(m);
+                Message::MixerMode(m) => {
+                    mixer.lock().unwrap().set_mode(m);
                 }
                 Message::NoteOn{pitch, velocity: _} => {
                     oscs.iter().for_each(|osc| {
                         let mut lock = osc.lock().unwrap();
-                        if lock.get_mode() == Mode::MIDI {
-                            lock.amp.note_on(pitch);
+                        if lock.get_mode() == OscMode::MIDI {
                             lock.note_on(pitch);
                         }
-                    })
+                    });
+                    mixer.lock().unwrap().amp.note_on(pitch);
                 }
                 Message::NoteOff{pitch} => {
                     oscs.iter().for_each(|osc| {
                         let mut lock = osc.lock().unwrap();
-                        if lock.get_mode() == Mode::MIDI {
-                            lock.amp.note_off(pitch);
+                        if lock.get_mode() == OscMode::MIDI {
                             lock.note_off(pitch);
                         }
-                    })
+                    });
+                    mixer.lock().unwrap().amp.note_off(pitch);
                 }
-                Message::Release(i, r) => {
-                    oscs[i].lock().unwrap().amp.adsr.release = r;
+                Message::OscMode(i, m) => {
+                    oscs[i].lock().unwrap().set_mode(m);
                 }
-                Message::Sustain(i, s) => {
-                    oscs[i].lock().unwrap().amp.adsr.set_sustain(s);
+                Message::Release(r) => {
+                    mixer.lock().unwrap().amp.adsr.release = r;
+                }
+                Message::Sustain(s) => {
+                    mixer.lock().unwrap().amp.adsr.set_sustain(s);
                 }
                 Message::Waveform(i, w) => {
                     oscs[i].lock().unwrap().set_waveform(w);

@@ -8,11 +8,6 @@ pub struct Amplifier {
     active_notes: BTreeSet<u8>,
     /// Contains duration information for changing amplitude throughout a note's lifetime.
     pub adsr: Envelope,
-    /// The overall volume modifier of the signal. Stored in the struct, this field is measured as an
-    /// amplitude multiplier, e.g. some value typically in the range `[0..1]`. However, when modified by
-    /// user input, the public-facing value is measured in dB as that is more commonly used by audio
-    /// professionals and musicians.
-    gain: f64,
     /// This field is used to keep track of what amplitude the signal should start at when releasing.
     last_amplitude: f64,
     /// When legato is `false`, envelopes restart from the beginning when two notes overlap. When legato
@@ -37,7 +32,6 @@ impl Amplifier {
         Amplifier {
             active_notes: BTreeSet::new(),
             adsr,
-            gain: 1.0,
             last_amplitude: 0.0,
             legato: false,
             note_on: false,
@@ -128,20 +122,7 @@ impl Amplifier {
             0.0
         };
 
-        sample_in * amplitude * self.gain
-    }
-
-    /// Returns the `gain` field of `self`.
-    pub fn get_gain(&mut self) -> f64 {
-        self.gain
-    }
-
-    /// Modifies the `gain` property of `self`.
-    /// 
-    /// The value of the `gain_gb` argument should be measured in dB. Often this value is between -60 and 0.
-    /// The gain in dB will be converted to an amplitude modifier between 0.0 and 1.0 before assignment.
-    pub fn set_gain(&mut self, gain_db: f64) {
-        self.gain = crate::synth::db_to_amp(gain_db);
+        sample_in * amplitude
     }
 }
 

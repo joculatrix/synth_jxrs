@@ -1,4 +1,5 @@
-export enum OscProps { attack, bypass, decay, freq, gain, master, mode, release, sustain, waveform }
+export enum AmpProps { attack, decay, sustain, release, gain, mode }
+export enum OscProps { bypass, freq, gain, mode, waveform }
 
 export global Logic {
     pure callback set_precision(float, int) -> string;

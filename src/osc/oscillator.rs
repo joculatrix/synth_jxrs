@@ -1,4 +1,4 @@
-use crate::{amp::Amplifier, synth};
+use crate::synth;
 
 use super::{wave::Waveform, *};
 
@@ -12,8 +12,6 @@ use super::{wave::Waveform, *};
 /// 
 /// [`osc::init_tables()`]: init_tables()
 pub struct Oscillator {
-    /// Manages the amplitude of the signal circumstantially.
-    pub amp: Amplifier,
     /// Determines whether the `Oscillator` is "bypassed" - if true, it produces no signal.
     pub bypass: bool,
     /// Currently unused. The type of this field might change with implementation. In theory, this will
@@ -25,11 +23,16 @@ pub struct Oscillator {
     /// The frequency, in Hz, produced by this `Oscillator`. When an FM input is active, this is treated as a base
     /// value for modulation and does not directly change.
     frequency: f64,
+    /// The overall volume modifier of the signal. Stored in the struct, this field is measured as an
+    /// amplitude multiplier, e.g. some value typically in the range `[0..1]`. However, when modified by
+    /// user input, the public-facing value is measured in dB as that is more commonly used by audio
+    /// professionals and musicians.
+    gain: f64,
     /// Keeps track of the actively held MIDI pitches, allowing the `Oscillator` to return to the most recently pressed,
     /// still-held pitch when the one corresponding to the current frequency is released.
     midi_notes: Vec<u8>,
     /// Determines which [`Mode`] the `Oscillator` is in.
-    mode: Mode,
+    mode: OscMode,
     /// Modified and rounded to increment the index the `Oscillator` uses to access values from its [`Waveform`]'s
     /// corresponding table stored in [`osc`].
     /// 
@@ -45,13 +48,13 @@ impl Oscillator {
     /// Currently, none of the values are taken as arguments.
     pub fn new() -> Oscillator {
         Oscillator {
-            amp: Amplifier::default(),
             bypass: true,
             fm: None,
             fm_range: 100,
             frequency: 440.0,
+            gain: 1.0,
             midi_notes: vec![],
-            mode: Mode::Freq,
+            mode: OscMode::MIDI,
             phase: 0.0,
             waveform: Waveform::Sine,
         }
@@ -100,15 +103,11 @@ impl Oscillator {
             }
         }
 
-        if self.mode == Mode::MIDI {
-            self.amp.calc(res)
-        } else {
-            res * self.amp.get_gain()
-        }
+        res * self.gain
     }
 
-    /// Returns the [`Mode`] of `self`.
-    pub fn get_mode(&self) -> Mode {
+    /// Returns the [`OscMode`] of `self`.
+    pub fn get_mode(&self) -> OscMode {
         self.mode
     }
 
@@ -169,8 +168,16 @@ impl Oscillator {
         self.frequency = freq;
     }
 
+    /// Modifies the `gain` property of `self`.
+    /// 
+    /// The value of the `gain_db` argument should be measured in dB. Often this value is between -60 and 0.
+    /// The gain in dB will be converted to an amplitude modifier between 0.0 and 1.0 before assignment.
+    pub fn set_gain(&mut self, gain_db: f64) {
+        self.gain = synth::db_to_amp(gain_db);
+    }
+
     /// Replaces `self.mode` with `mode`.
-    pub fn set_mode(&mut self, mode: Mode) {
+    pub fn set_mode(&mut self, mode: OscMode) {
         self.mode = mode;
     }
 
@@ -182,10 +189,9 @@ impl Oscillator {
 
 /// The mode in which an [`Oscillator`] should operate.
 #[derive(Clone,Copy,Debug,PartialEq)]
-pub enum Mode {
+pub enum OscMode {
     /// The [`Oscillator`] will continuously produce a tone at a constant frequency.
-    Freq,
-    /// The [`Oscillator`] will produce sounds where the pitch, duration, and amplitude are determined
-    /// via MIDI input.
+    Constant,
+    /// The [`Oscillator`] will produce sounds where the pitch is modified by MIDI signals.
     MIDI,
 }

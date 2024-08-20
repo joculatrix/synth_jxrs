@@ -1,3 +1,5 @@
+use crate::amp::Amplifier;
+
 /// Struct for managing over-arching volume and mixing for the synthesizer.
 pub struct Mixer {
     /// The overall volume modifier of the signal. Stored in the struct, this field is measured as an
@@ -5,6 +7,10 @@ pub struct Mixer {
     /// user input, the public-facing value is measured in dB as that is more commonly used by audio
     /// professionals and musicians.
     master_gain: f64,
+    /// The [`Amplifier`] that handles MIDI signals and envelope calculation for this `Mixer`.
+    pub amp: Amplifier,
+    /// The current [`SynthMode`] of the synthesizer.
+    mode: SynthMode,
 }
 
 impl Mixer {
@@ -12,12 +18,21 @@ impl Mixer {
     pub fn new() -> Mixer {
         Mixer {
             master_gain: 1.0,
+            amp: Amplifier::default(),
+            mode: SynthMode::MIDI,
         }
     }
 
-    /// Multiples `sample_in` by `self.master_gain`.
-    pub fn calc(&self, sample_in: f64) -> f64 {
-        sample_in * self.master_gain
+    /// If `self.mode` is [`SynthMode::MIDI`], calls [`Amplifier::calc()`] on `sample_in` before multiplying
+    /// by `self.master_gain`.
+    /// 
+    /// Otherwise, just multiplies `sample_in` by `self.master_gain`.
+    pub fn calc(&mut self, sample_in: f64) -> f64 {
+        if self.mode == SynthMode::MIDI {
+            self.amp.calc(sample_in) * self.master_gain
+        } else {
+            sample_in * self.master_gain
+        }
     }
 
     /// Modifies the `master_gain` property of `self`.
@@ -27,4 +42,16 @@ impl Mixer {
     pub fn set_gain(&mut self, gain_db: f64) {
         self.master_gain = crate::synth::db_to_amp(gain_db);
     }
+
+    /// Replaces `self.mode` with `mode`.
+    pub fn set_mode(&mut self, mode: SynthMode) {
+        self.mode = mode;
+    }
+}
+
+/// Determines whether the envelope of the synth should follow MIDI signals.
+#[derive(Clone,Debug,PartialEq)]
+pub enum SynthMode {
+    Constant,
+    MIDI,
 }
