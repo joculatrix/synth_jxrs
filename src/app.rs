@@ -33,6 +33,9 @@ pub fn run(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
             OscProps::Fine => {
                 tx2.send(Message::Fine(index, value.into()));
             }
+            OscProps::FmRange => unsafe {
+                tx2.send(Message::FmRange(index, value.to_int_unchecked()));
+            }
             OscProps::Freq => {
                 tx2.send(Message::Freq(index, value.into()));
             }
@@ -46,6 +49,16 @@ pub fn run(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
                     _ => panic!(),
                 };
                 tx2.send(Message::OscMode(index, value));
+            }
+            OscProps::Output => unsafe {
+                let value = match value.to_int_unchecked() {
+                    j if
+                        (1..=4).contains(&j)
+                        && j as usize - 1 != index => oscillator::OutputMode::Osc(j as usize - 1),
+                    _ => oscillator::OutputMode::Master,
+                };
+
+                tx2.send(Message::Output(index, value));
             }
             OscProps::Waveform => unsafe {
                 let waveform = match value.to_int_unchecked() {

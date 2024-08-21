@@ -138,8 +138,8 @@ export component Knob inherits Rectangle {
                 height: root.size / 35;
                 border-radius: self.width / 2;
 
-                x: ((root.size / 4) - sin(root.progress * 270deg) * (root.size / 6)) - (self.width / 2);
-                y: ((root.size / 4) + cos(root.progress * 270deg) * (root.size / 6)) - (self.height / 2);
+                x: ((root.size / 4) - sin(root.progress * 270deg) * (root.size / 8)) - (self.width / 2);
+                y: ((root.size / 4) + cos(root.progress * 270deg) * (root.size / 8)) - (self.height / 2);
             }
             area := TouchArea {
                 height: root.size / 2 - 40px;

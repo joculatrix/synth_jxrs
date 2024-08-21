@@ -116,32 +116,35 @@ where
                 Message::Quit() => {
                     return Ok(());
                 }
-                Message::Attack(a) => {
-                    mixer.lock().unwrap().amp.adsr.attack = a;
+                Message::Attack(attack) => {
+                    mixer.lock().unwrap().amp.adsr.attack = attack;
                 }
-                Message::Bypass(i, b) => {
-                    oscs[i].lock().unwrap().bypass = b;
+                Message::Bypass(i, bypass) => {
+                    oscs[i].lock().unwrap().bypass = bypass;
                 }
-                Message::Coarse(i, c) => {
-                    oscs[i].lock().unwrap().set_coarse_detune(c);
+                Message::Coarse(i, coarse) => {
+                    oscs[i].lock().unwrap().set_coarse_detune(coarse);
                 }
-                Message::Decay(d) => {
-                    mixer.lock().unwrap().amp.adsr.decay = d;
+                Message::Decay(decay) => {
+                    mixer.lock().unwrap().amp.adsr.decay = decay;
                 }
-                Message::Fine(i, f) => {
-                    oscs[i].lock().unwrap().set_fine_detune(f);
+                Message::Fine(i, fine) => {
+                    oscs[i].lock().unwrap().set_fine_detune(fine);
                 }
-                Message::Freq(i, f) => {
-                    oscs[i].lock().unwrap().set_freq(f);
+                Message::FmRange(i, range) => {
+                    oscs[i].lock().unwrap().set_fm_range(range);
                 }
-                Message::Gain(i, g) => {
-                    oscs[i].lock().unwrap().set_gain(g);
+                Message::Freq(i, freq) => {
+                    oscs[i].lock().unwrap().set_freq(freq);
                 }
-                Message::Master(g) => {
-                    mixer.lock().unwrap().set_gain(g);
+                Message::Gain(i, gain) => {
+                    oscs[i].lock().unwrap().set_gain(gain);
                 }
-                Message::MixerMode(m) => {
-                    mixer.lock().unwrap().set_mode(m);
+                Message::Master(gain) => {
+                    mixer.lock().unwrap().set_gain(gain);
+                }
+                Message::MixerMode(mode) => {
+                    mixer.lock().unwrap().set_mode(mode);
                 }
                 Message::NoteOn{pitch, velocity: _} => {
                     oscs.iter().for_each(|osc| {
@@ -161,17 +164,35 @@ where
                     });
                     mixer.lock().unwrap().amp.note_off(pitch);
                 }
-                Message::OscMode(i, m) => {
-                    oscs[i].lock().unwrap().set_mode(m);
+                Message::OscMode(i, mode) => {
+                    oscs[i].lock().unwrap().set_mode(mode);
                 }
-                Message::Release(r) => {
-                    mixer.lock().unwrap().amp.adsr.release = r;
+                Message::Output(i, mode) => {
+                    let mut lock = oscs[i].lock().unwrap();
+                    match lock.get_output() {
+                        osc::oscillator::OutputMode::Master => (),
+                        osc::oscillator::OutputMode::Osc(j) => {
+                            oscs[j].lock().unwrap().remove_fm_in(i);
+                        }
+                    }
+                    match mode {
+                        osc::oscillator::OutputMode::Master => {
+                            lock.set_output(mode);
+                        }
+                        osc::oscillator::OutputMode::Osc(j) => {
+                            lock.set_output(mode);
+                            oscs[j].lock().unwrap().add_fm_in(i);
+                        }
+                    }
                 }
-                Message::Sustain(s) => {
-                    mixer.lock().unwrap().amp.adsr.set_sustain(s);
+                Message::Release(release) => {
+                    mixer.lock().unwrap().amp.adsr.release = release;
                 }
-                Message::Waveform(i, w) => {
-                    oscs[i].lock().unwrap().set_waveform(w);
+                Message::Sustain(sustain) => {
+                    mixer.lock().unwrap().amp.adsr.set_sustain(sustain);
+                }
+                Message::Waveform(i, waveform) => {
+                    oscs[i].lock().unwrap().set_waveform(waveform);
                 }
                 _ => ()
             } 
@@ -196,8 +217,15 @@ where
         let mut amps: [f64; NUM_OSCS] = [0.0; NUM_OSCS];
 
         for i in 0..NUM_OSCS {
-            let amp = oscs[i].lock().unwrap().calc();
-            amps[i] = amp;
+            let mut lock = oscs[i].lock().unwrap();
+            match lock.get_output() {
+                osc::oscillator::OutputMode::Master => {
+                    amps[i] = lock.calc();
+                }
+                osc::oscillator::OutputMode::Osc(j) => {
+                    oscs[j].lock().unwrap().fm_sample_in(i, lock.calc());
+                }
+            }
         }
 
         let mut value: f64 = 0.0;
@@ -205,7 +233,7 @@ where
             value += amp;
         }
         let value = T::from_sample(
-            mixer.lock().unwrap().calc(0.3 * value)
+            mixer.lock().unwrap().calc(0.25 * value)
         );
 
         for sample in frame.iter_mut() {

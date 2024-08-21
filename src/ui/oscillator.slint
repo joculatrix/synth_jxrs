@@ -4,6 +4,7 @@ import { Knob } from "knob.slint";
 
 export component Oscillator inherits Rectangle {
     in-out property <float> frequency: 440;
+    in-out property <float> fm_range: 100;
     in-out property <float> pitch_coarse: 0;
     in-out property <float> pitch_fine: 0;
     in-out property <float> gain: 0;
@@ -20,21 +21,24 @@ export component Oscillator inherits Rectangle {
         spacing: 10px;
 
         Row {
-            Text {
-                text: "OSC \{root.id}";
-                color: root.accent-color;
-                font-weight: 900;
-                font-size: 16px;
+            HorizontalLayout {
+                spacing: 100px;
 
-                stroke: black;
-                stroke-width: 0px;
-            }
-        }
-        Row {
-            Switch {
-                toggled => {
-                    // switch on = oscillator on, bypass off; switch off = oscillator off, bypass on
-                    self.checked ? root.changed(OscProps.bypass, 0) : root.changed(OscProps.bypass, 1);
+                Switch {
+                    toggled => {
+                        // switch on = oscillator on, bypass off; switch off = oscillator off, bypass on
+                        self.checked ? root.changed(OscProps.bypass, 0) : root.changed(OscProps.bypass, 1);
+                    }
+                }
+
+                Text {
+                    text: "OSC \{root.id}";
+                    color: root.accent-color;
+                    font-weight: 900;
+                    font-size: 20px;
+    
+                    stroke: black;
+                    stroke-width: 0px;
                 }
             }
             ComboBox {
@@ -50,108 +54,174 @@ export component Oscillator inherits Rectangle {
         }
 
         Row {
-            tabs := TabWidget {
-                Tab { // 0
-                    title: "MIDI";
+            VerticalLayout {
+                spacing: 5px;
 
-                    HorizontalLayout {
-                        alignment: center;
-                        spacing: 20px;
-
-                        coarse_detune := Knob {
-                            text: "PITCH";
-                            value <=> root.pitch_coarse;
-                            progress: 0.5 + (self.value / 24);
-                            size: 150px;
-                            accent-color: root.accent-color;
+                Rectangle {
+                    border-color: #393d42;
+                    border-radius: 10px;
+                    border-width: 1px;
     
-                            changed => {
-                                self.value = floor((self.progress - 0.5) * 24);
-                                root.changed(OscProps.coarse, floor(self.value));
-                            }
-                            double-clicked => {
-                                self.value = 0;
-                                self.progress = 0.5 + (self.value / 24);
-                                root.changed(OscProps.coarse, (self.value / 100));
-                            }
-                            text_input_accepted(s) => {
-                                self.value = floor(max(-12, min(12, s.to-float())));
-                                self.progress = 0.5 + (self.value / 24);
+                    tabs := TabWidget {
+                        Tab { // 0
+                            title: "MIDI";
+        
+                            HorizontalLayout {
+                                alignment: center;
+                                spacing: 20px;
+
+                                y: (tabs.height / 2) - (self.height / 2);
+        
+                                coarse_detune := Knob {
+                                    text: "PITCH";
+                                    value <=> root.pitch_coarse;
+                                    progress: 0.5 + (self.value / 24);
+                                    size: 150px;
+                                    accent-color: root.accent-color;
+            
+                                    changed => {
+                                        self.value = floor((self.progress - 0.5) * 24);
+                                        root.changed(OscProps.coarse, floor(self.value));
+                                    }
+                                    double-clicked => {
+                                        self.value = 0;
+                                        self.progress = 0.5 + (self.value / 24);
+                                        root.changed(OscProps.coarse, (self.value / 100));
+                                    }
+                                    text_input_accepted(s) => {
+                                        self.value = floor(max(-12, min(12, s.to-float())));
+                                        self.progress = 0.5 + (self.value / 24);
+                                    }
+                                }
+        
+                                fine_detune := Knob {
+                                    text: "FINE";
+                                    value <=> root.pitch_fine;
+                                    progress: 0.5 + (self.value / 50);
+                                    size: 125px;
+                                    accent-color: root.accent-color;
+            
+                                    changed => {
+                                        self.value = (self.progress - 0.5) * 50;
+                                        root.changed(OscProps.fine, (self.value / 100));
+                                    }
+                                    double-clicked => {
+                                        self.value = 0;
+                                        self.progress = 0.5 + (self.value / 50);
+                                        root.changed(OscProps.fine, (self.value / 100));
+                                    }
+                                    text_input_accepted(s) => {
+                                        self.value = max(-50, min(50, s.to-float()));
+                                        self.progress = 0.5 + (self.value / 50);
+                                    }
+                                }
                             }
                         }
+                        Tab { // 1
+                            title: "Constant";
+        
+                            freq_knob := Knob {
+                                text: "FREQ";
+                                value <=> root.frequency;
+                                progress: ((self.value) - 10.0) * 0.0005;
+                                size: 150px;
+                                accent-color: root.accent-color;
+        
+                                changed => {
+                                    self.value = self.progress / 0.0005 + 10.0;
+                                    root.changed(OscProps.freq, self.value);
+                                }
+                                double-clicked => {
+                                    self.value = 440;
+                                    self.progress = ((self.value) - 10.0) * 0.0005;
+                                }
+                                text_input_accepted(s) => {
+                                    self.value = max(10, min(2010, s.to-float()));
+                                    self.progress = ((self.value) - 10.0) * 0.0005;
+                                }
+                            }
+                        }
+                    } // tabs
+                }
 
-                        fine_detune := Knob {
-                            text: "FINE";
-                            value <=> root.pitch_fine;
-                            progress: 0.5 + (self.value / 50);
-                            size: 125px;
-                            accent-color: root.accent-color;
-    
-                            changed => {
-                                self.value = (self.progress - 0.5) * 50;
-                                root.changed(OscProps.fine, (self.value / 100));
-                            }
-                            double-clicked => {
-                                self.value = 0;
-                                self.progress = 0.5 + (self.value / 50);
-                                root.changed(OscProps.fine, (self.value / 100));
-                            }
-                            text_input_accepted(s) => {
-                                self.value = max(-50, min(50, s.to-float()));
-                                self.progress = 0.5 + (self.value / 50);
+                Rectangle {
+                    border-color: #393d42;
+                    border-radius: 10px;
+                    border-width: 1px;
+
+                    VerticalLayout {
+                        padding: 5px;
+                        spacing: 3px;
+
+                        Text {
+                            text: "OUTPUT";
+                        }
+
+                        output := ComboBox {
+                            model: ["Amp", "1", "2", "3", "4"];
+                            current-value: "Amp";
+
+                            selected(s) => {
+                                root.changed(OscProps.output, self.current-index);
                             }
                         }
                     }
                 }
-                Tab { // 1
-                    title: "Constant";
-
-                    freq_knob := Knob {
-                        text: "FREQ";
-                        value <=> root.frequency;
-                        progress: ((self.value) - 10.0) * 0.0005;
-                        size: 150px;
-                        accent-color: root.accent-color;
-
-                        changed => {
-                            self.value = self.progress / 0.0005 + 10.0;
-                            root.changed(OscProps.freq, self.value);
-                        }
-                        double-clicked => {
-                            self.value = 440;
-                            self.progress = ((self.value) - 10.0) * 0.0005;
-                        }
-                        text_input_accepted(s) => {
-                            self.value = max(10, min(2010, s.to-float()));
-                            self.progress = ((self.value) - 10.0) * 0.0005;
-                        }
-                    }
-                }
-            } // tabs
+            }
+            
             gain_rect := Rectangle {
                 max-width: 250px;
+                
+                border-radius: 10px;
+                border-color: #393d42;
+                border-width: 1px;
 
-                gain_knob := Knob {
-                    text: "GAIN (dB)";
-                    value <=> root.gain;
-                    progress: (self.value + 60) / 60;
+                VerticalLayout {
+                    gain_knob := Knob {
+                        text: "GAIN (dB)";
+                        value <=> root.gain;
+                        progress: (self.value + 60) / 60;
+        
+                        size: 150px;
+                        accent-color: root.accent-color;
     
-                    size: 200px;
-                    accent-color: root.accent-color;
+                        x: (gain_rect.width / 2) - (self.width / 2);
+        
+                        changed => {
+                            self.value = self.progress * 60 - 60;
+                            root.changed(OscProps.gain, self.value);
+                        }
+                        double-clicked => {
+                            self.value = 0;
+                            self.progress = (self.value + 60) / 60;
+                        }
+                        text_input_accepted(s) => {
+                            self.value = max(-60, min(0, s.to-float()));
+                            self.progress = (self.value + 60) / 60;
+                        }
+                    }
+                    fm_range_knob := Knob {
+                        text: "MOD";
+                        value <=> root.fm_range;
+                        progress: self.value / 1000;
 
-                    x: (gain_rect.width / 2) - (self.width / 2);
-    
-                    changed => {
-                        self.value = self.progress * 60 - 60;
-                        root.changed(OscProps.gain, self.value);
-                    }
-                    double-clicked => {
-                        self.value = 0;
-                        self.progress = (self.value + 60) / 60;
-                    }
-                    text_input_accepted(s) => {
-                        self.value = max(-60, min(0, s.to-float()));
-                        self.progress = (self.value + 60) / 60;
+                        size: 125px;
+                        accent-color: root.accent-color;
+
+                        x: (gain_rect.width / 2) - (self.width / 2);
+
+                        changed => {
+                            self.value = self.progress * 1000;
+                            root.changed(OscProps.fm_range, self.value);
+                        }
+                        double-clicked => {
+                            self.value = 100;
+                            self.progress = self.value / 1000;
+                        }
+                        text_input_accepted(s) => {
+                            self.value = max(0, min(1000, s.to-float()));
+                            self.progress = self.value / 1000;
+                        }
                     }
                 }
             }

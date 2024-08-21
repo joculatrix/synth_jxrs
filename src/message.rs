@@ -29,6 +29,8 @@ pub enum Message {
     Decay(f64),
     /// Sent by the UI in [`app`] to modify the `fine` detune value of an [`Oscillator`].
     Fine(usize, f64),
+    /// Sent by the UI in [`app`] to modify the `fm_range` of an [`Oscillator`].
+    FmRange(usize, u16),
     /// Sent by the UI in [`app`] to modify the `frequency` value of an [`Oscillator`].
     Freq(usize, f64),
     /// Sent by the UI in [`app`] to modify the `gain` value of an [`Oscillator`]'s [`Amplifier`].
@@ -45,6 +47,8 @@ pub enum Message {
     NoteOff{pitch: u8},
     /// Sent by the UI in [`app`] to modify the `mode` value of an [`Oscillator`].
     OscMode(usize, oscillator::OscMode), 
+    /// Sent by the UI in [`app`] to modify where an [`Oscillator`]'s signal outputs to.
+    Output(usize, oscillator::OutputMode),
     /// Sent by the UI in [`app`] to modify the `release` value of the [`Mixer`]'s [`Envelope`].
     Release(f64),
     /// Sent by the UI in [`app`] to notify [`midi`] to retry the connection to the MIDI device.
