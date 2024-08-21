@@ -1,37 +1,64 @@
 use std::error::Error;
 
 use midi_control::MidiMessage;
-use midir::MidiInput;
+use midir::{MidiInput, MidiInputConnection};
 use tokio::sync::broadcast::Sender;
 
 use crate::message::Message;
 
+type Connection = MidiInputConnection<Sender<Message>>;
+
 /// Connects to the first active MIDI device and listens for input, sending appropriate signals to [`synth`].
 /// 
-/// # Errors
-/// 
-/// This function currently returns an `Err()` if no MIDI port is found, ending the task. This is fine for development
-/// purposes, as [`synth`] and [`app`] continue running without it, but ideally, the program would either repeatedly
-/// check for input ports or allow the user to trigger another attempt. The user would also ideally be able to select
-/// different ports or devices, in case multiple are connected, as the function currently allows no choice.
+/// If no MIDI devices are found, the thread will continue running and will make another attempt to connect to
+/// a MIDI device when sent a button press from the UI in [`app`].
 /// 
 /// [`app`]:    crate::app
 /// [`synth`]:  crate::synth
 pub async fn listen(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
+    let mut rx = tx.subscribe();
+
+    let mut connection = connect(tx.clone());
+
+    loop { tokio::select! {
+        Ok(msg) = rx.recv() => {
+            match msg {
+                Message::Quit() => {
+                    if let Some(connection) = connection.take() {
+                        connection.close();
+                    }
+                    break;
+                }
+                Message::ResetMIDI() => {
+                    if let Some(connection) = connection.take() {
+                        connection.close();
+                    }
+                    connection = connect(tx.clone());
+                }
+                _ => (),
+            }
+        }
+    }}
+
+    Ok(())
+}
+
+fn connect(tx: Sender<Message>) -> Option<Connection> {
     // client_name is currently unused by the midir code, and its intended purpose is unexplained,
     // so for now I'm passing in an empty string:
     let stream = MidiInput::new("").unwrap();
 
     let inputs = stream.ports();
     let port = match inputs.len() {
-        0 => return Err("no MIDI input ports found".into()),
+        0 => {
+            eprintln!("MIDI error: no MIDI input ports found");
+            return None
+        },
         // TODO: allow port selection through UI instead of forcing first port
         _ => &inputs[0],
     };
 
-    let mut rx = tx.subscribe();
-
-    let connection = stream.connect(
+    match stream.connect(
         port,
         "synth_jxrs_port",
         |_timestamp, msg, tx| {
@@ -40,32 +67,21 @@ pub async fn listen(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
             }
         },
         tx,
-    )?;
-
-    loop { tokio::select! {
-        Ok(msg) = rx.recv() => {
-            match msg {
-                Message::Quit() => {
-                    break;
-                }
-                _ => (),
-            }
+    ) {
+        Ok(c) => {
+            eprintln!("Successfully connected to MIDI input.");
+            Some(c)
         }
-    }}
-
-    connection.close();
-
-    Ok(())
+        Err(e) => {
+            eprintln!("MIDI error: {e}");
+            None
+        }
+    }
 }
 
 /// Communicates to the rest of the program based on received MIDI input.
 /// 
-/// Currently, only `NoteOn` and `NoteOff` events are supported.
-/// 
-/// # Panics
-/// 
-/// `todo!()` is invoked for every MIDI input event aside from NoteOn and NoteOff until it comes
-/// time to consider which should be implemented.
+/// Currently, only `NoteOn` and `NoteOff` events are supported. Other signals do nothing.
 fn parse_message(msg: &[u8], tx: &mut Sender<Message>) -> Result<(), Box<dyn Error>> {
     match MidiMessage::from(msg) {
         MidiMessage::Invalid => {
@@ -80,12 +96,12 @@ fn parse_message(msg: &[u8], tx: &mut Sender<Message>) -> Result<(), Box<dyn Err
         MidiMessage::NoteOff(_channel, key_event) => {
             tx.send(Message::NoteOff{pitch: key_event.key})?;
         }
-        MidiMessage::PolyKeyPressure(_, _) => todo!(),
-        MidiMessage::ControlChange(_, _) => todo!(),
-        MidiMessage::ProgramChange(_, _) => todo!(),
-        MidiMessage::ChannelPressure(_, _) => todo!(),
-        MidiMessage::PitchBend(_, _, _) => todo!(),
-        MidiMessage::SysEx(_) => todo!(),
+        MidiMessage::PolyKeyPressure(_, _) => {}
+        MidiMessage::ControlChange(_, _) => {}
+        MidiMessage::ProgramChange(_, _) => {}
+        MidiMessage::ChannelPressure(_, _) => {}
+        MidiMessage::PitchBend(_, _, _) => {}
+        MidiMessage::SysEx(_) => {}
     }
     Ok(())
 }

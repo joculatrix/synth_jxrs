@@ -47,6 +47,8 @@ pub enum Message {
     OscMode(usize, oscillator::OscMode), 
     /// Sent by the UI in [`app`] to modify the `release` value of the [`Mixer`]'s [`Envelope`].
     Release(f64),
+    /// Sent by the UI in [`app`] to notify [`midi`] to retry the connection to the MIDI device.
+    ResetMIDI(),
     /// Currently unused. Previously used to send samples to the UI to display an oscilloscope.
     Sample(usize, f64),
     /// Sent by the UI in [`app`] to modify the `sustain` value of the [`Mixer`]'s [`Envelope`].

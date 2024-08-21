@@ -90,6 +90,12 @@ pub fn run(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
         }
     });
 
+    let tx4 = tx.clone();
+
+    main_window.on_midi_reset(move || {
+        tx4.send(Message::ResetMIDI());
+    });
+
     main_window.on_set_precision(|value, precision| {
         format!("{value:.0$}", usize::try_from(precision).unwrap_or(0)).into()
     });
