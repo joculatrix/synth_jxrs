@@ -23,8 +23,12 @@ pub enum Message {
     Attack(f64),
     /// Sent by the UI in [`app`] to modify the `bypass` value of an [`Oscillator`].
     Bypass(usize, bool),
+    /// Sent by the UI in [`app`] to modify the `coarse` detune value of an [`Oscillator`].
+    Coarse(usize, i32),
     /// Sent by the UI in [`app`] to modify the `decay` value of the [`Mixer`]'s [`Envelope`].
     Decay(f64),
+    /// Sent by the UI in [`app`] to modify the `fine` detune value of an [`Oscillator`].
+    Fine(usize, f64),
     /// Sent by the UI in [`app`] to modify the `frequency` value of an [`Oscillator`].
     Freq(usize, f64),
     /// Sent by the UI in [`app`] to modify the `gain` value of an [`Oscillator`]'s [`Amplifier`].

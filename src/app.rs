@@ -27,6 +27,12 @@ pub fn run(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
                 };
                 tx2.send(Message::Bypass(index, value));
             }
+            OscProps::Coarse => unsafe {
+                tx2.send(Message::Coarse(index, value.to_int_unchecked()));
+            }
+            OscProps::Fine => {
+                tx2.send(Message::Fine(index, value.into()));
+            }
             OscProps::Freq => {
                 tx2.send(Message::Freq(index, value.into()));
             }

@@ -122,8 +122,14 @@ where
                 Message::Bypass(i, b) => {
                     oscs[i].lock().unwrap().bypass = b;
                 }
+                Message::Coarse(i, c) => {
+                    oscs[i].lock().unwrap().set_coarse_detune(c);
+                }
                 Message::Decay(d) => {
                     mixer.lock().unwrap().amp.adsr.decay = d;
+                }
+                Message::Fine(i, f) => {
+                    oscs[i].lock().unwrap().set_fine_detune(f);
                 }
                 Message::Freq(i, f) => {
                     oscs[i].lock().unwrap().set_freq(f);
