@@ -19,7 +19,7 @@ pub struct Oscillator {
     /// Allows the `frequency` of the `Oscillator` to be modified by the amplitude
     /// of the signal from other `Oscillator`s via frequency modulation.
     fm_in: HashMap<usize, f64>,
-    /// Determines the range by which an FM input can modulate one of the `Oscillator`'s values.
+    /// Determines the range by which an FM input can modulate the `Oscillator`'s frequency.
     fm_range: u16,
     /// The frequency, in Hz, produced by this `Oscillator`. When an FM input is active, this is treated as a base
     /// value for modulation and does not directly change.
