@@ -45,6 +45,10 @@ If you're trying to test the application without a MIDI controller, ensure all o
 6. **Release**: The duration (in seconds) it takes the sound to fade to nothing after the note ends.
 7. **Reset MIDI**: This button tells the application to restart the MIDI listener in order to retry connecting to a MIDI device.
 
+## Building the application
+
+The application doesn't require any special settings. Just run `cargo build` or `cargo run` with a compatible version of Cargo/Rust installed.
+
 <br />
 
 <img src="https://github.com/user-attachments/assets/9a4cd9e0-e2a6-45a5-91db-9746bf967720" alt="'Made with Slint' logo" width="200">
