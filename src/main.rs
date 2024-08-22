@@ -9,7 +9,6 @@ use tokio::sync::broadcast::{self};
 // modules:
 mod amp;
 mod app;
-mod filter;
 mod message;
 mod midi;
 mod mixer;
