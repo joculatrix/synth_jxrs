@@ -35,7 +35,7 @@ If you're trying to test the application without a MIDI controller, ensure all o
 
 ### Navigating the amplifier:
 
-<img src="https://github.com/user-attachments/assets/5c73da81-66cc-4e21-b959-95a5ab4bf252" alt="A screenshot of the synthesizer's amplifier with numbered labels" width="600">
+<img src="https://github.com/user-attachments/assets/5c73da81-66cc-4e21-b959-95a5ab4bf252" alt="A screenshot of the synthesizer's amplifier with numbered labels" width="300">
 
 1. **Gain**: The overall gain for the whole application, from -60 to 0 dB.
 2. **Mode**: MIDI mode allows the duration and timing of sound to be tied to MIDI signals, while Constant mode lets the audio play indefinitely.
