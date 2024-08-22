@@ -173,5 +173,8 @@ export component Knob inherits Rectangle {
         }
     }
 
-    fs := FocusScope { } // hacky solution to remove focus from other elements
+    fs := FocusScope { // hacky solution to remove focus from the LineEdit
+        // disables click-to-focus behavior -- users don't have to click the knob to focus before moving it
+        enabled: false;
+    } 
 }
