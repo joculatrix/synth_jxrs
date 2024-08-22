@@ -63,7 +63,7 @@ fn connect(tx: Sender<Message>) -> Option<Connection> {
         "synth_jxrs_port",
         |_timestamp, msg, tx| {
             if let Err(e) = parse_message(msg, tx) {
-                // do some sort of logging
+                eprintln!("MIDI error: {e}");
             }
         },
         tx,
