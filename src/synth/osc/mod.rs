@@ -40,3 +40,33 @@ pub fn init_tables() {
     let _ = &*SQUARE_TABLE;
     let _ = &*TRI_TABLE;
 }
+
+/// These tests ensure the first samples of [`SAW_TABLE`], [`SINE_TABLE`], and [`TRI_TABLE`]
+/// occur at zero-crossings (amplitude 0.0), making it more feasible to minimize audible popping
+/// by starting notes at the first sample. See [`Oscillator::note_on()`].
+/// 
+/// These tests exclude the square wave because it only has values of `-1.0` and `1.0`.
+/// 
+/// [`Oscillator::note_on()`]:  oscillator::Oscillator::note_on()
+#[cfg(test)]
+mod zero_crossing_tests {
+    use super::*;
+
+    #[test]
+    fn first_saw_sample_is_zero() {
+        init_tables();
+        assert_eq!(SAW_TABLE[0], 0.0)
+    }
+
+    #[test]
+    fn first_sine_sample_is_zero() {
+        init_tables();
+        assert_eq!(SINE_TABLE[0], 0.0)
+    }
+
+    #[test]
+    fn first_triangle_sample_is_zero() {
+        init_tables();
+        assert_eq!(TRI_TABLE[0], 0.0)
+    }
+}
