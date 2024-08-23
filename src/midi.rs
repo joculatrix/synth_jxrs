@@ -90,7 +90,7 @@ fn parse_message(msg: &[u8], tx: &mut Sender<Message>) -> Result<(), Box<dyn Err
         MidiMessage::NoteOn(_channel, key_event) => {
             tx.send(Message::NoteOn{
                 pitch: key_event.key,
-                velocity: key_event.value
+                _velocity: key_event.value
             })?;
         }
         MidiMessage::NoteOff(_channel, key_event) => {

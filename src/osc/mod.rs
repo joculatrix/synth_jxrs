@@ -1,3 +1,5 @@
+use std::{array, sync::LazyLock};
+
 use wave::Waveform;
 
 pub mod oscillator;
@@ -6,24 +8,35 @@ pub mod wave;
 /// Number of samples stored in the reference tables for each waveform.
 const TABLE_LENGTH: usize = 1024;
 
-static mut SAW_TABLE:       [f64; TABLE_LENGTH] = [0.0; TABLE_LENGTH];
-static mut SINE_TABLE:      [f64; TABLE_LENGTH] = [0.0; TABLE_LENGTH];
-static mut SQUARE_TABLE:    [f64; TABLE_LENGTH] = [0.0; TABLE_LENGTH];
-static mut TRI_TABLE:       [f64; TABLE_LENGTH] = [0.0; TABLE_LENGTH];
+static SAW_TABLE: LazyLock<[f64; TABLE_LENGTH]> = LazyLock::new(|| {
+    array::from_fn(|i|
+        Waveform::Saw.calc(i as f64 / TABLE_LENGTH as f64, 1.0)
+    )
+});
+static SINE_TABLE: LazyLock<[f64; TABLE_LENGTH]> = LazyLock::new(|| {
+    array::from_fn(|i|
+        Waveform::Sine.calc(i as f64 / TABLE_LENGTH as f64, 1.0)
+    )
+});
+static SQUARE_TABLE: LazyLock<[f64; TABLE_LENGTH]> = LazyLock::new(|| {
+    array::from_fn(|i|
+        Waveform::Square.calc(i as f64 / TABLE_LENGTH as f64, 1.0)
+    )
+});
+static TRI_TABLE: LazyLock<[f64; TABLE_LENGTH]> = LazyLock::new(|| {
+    array::from_fn(|i|
+        Waveform::Triangle.calc(i as f64 / TABLE_LENGTH as f64, 1.0)
+    )
+});
 
-/// Calculate [`TABLE_LENGTH`] samples for each [`Waveform`] at startup, storing
-/// in a static array that can be used to oscillate later via indexing rather
-/// than by more taxing calculations throughout execution. See the implementation
-/// of [`Oscillator::calc()`].
+/// Call the initialization for [`SAW_TABLE`], [`SINE_TABLE`], [`SQUARE_TABLE`], and
+/// [`TRI_TABLE`] statics, so that their pre-generated values can be referenced at runtime
+/// rather than doing constant calculations. See: [`Oscillator::calc()`].
 /// 
 /// [`Oscillator::calc()`]: oscillator::Oscillator::calc()
-pub unsafe fn init_tables() {
-    for i in 0..TABLE_LENGTH {
-        let delta = i as f64 / TABLE_LENGTH as f64;
-            
-        SAW_TABLE[i] = Waveform::Saw.calc(delta, 1.0);
-        SINE_TABLE[i] = Waveform::Sine.calc(delta, 1.0);
-        SQUARE_TABLE[i] = Waveform::Square.calc(delta, 1.0);
-        TRI_TABLE[i] = Waveform::Triangle.calc(delta, 1.0);
-    }
+pub fn init_tables() {
+    let _ = &*SAW_TABLE;
+    let _ = &*SINE_TABLE;
+    let _ = &*SQUARE_TABLE;
+    let _ = &*TRI_TABLE;
 }

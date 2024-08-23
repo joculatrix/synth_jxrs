@@ -51,7 +51,7 @@ pub enum Message {
     MixerMode(mixer::SynthMode),
 
     /// Sent by [`midi`] to signal a MIDI note-on. Velocity is currently unused.
-    NoteOn{pitch: u8, velocity: u8},
+    NoteOn{pitch: u8, _velocity: u8},
 
     /// Sent by [`midi`] to signal a MIDI note-off.
     NoteOff{pitch: u8},

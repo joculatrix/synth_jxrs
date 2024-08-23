@@ -15,9 +15,6 @@ mod mixer;
 mod osc;
 mod synth;
 
-// statics:
-static mut SAMPLE_RATE: f64 = 48000.0;
-
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<(), Box<dyn Error>> {
     let (tx, _rx) = broadcast::channel(10);

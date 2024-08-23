@@ -48,7 +48,7 @@ pub fn run(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
                     1 => oscillator::OscMode::Constant,
                     _ => panic!(),
                 };
-                (Message::OscMode(index, value))
+                Message::OscMode(index, value)
             }
             OscProps::Output => unsafe {
                 let value = match value.to_int_unchecked() {

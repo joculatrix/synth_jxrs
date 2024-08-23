@@ -1,4 +1,8 @@
-use std::{array, fmt::Display};
+use std::{
+    array, 
+    fmt::Display,
+    sync::LazyLock,
+};
 use crate::*;
 
 use cpal::{traits::{DeviceTrait, HostTrait, StreamTrait}, FromSample, SizedSample, Stream};
@@ -15,9 +19,17 @@ pub const NUM_OSCS: usize = 4;
 
 /// A table of MIDI pitch values `[0..127]` and their corresponding frequencies in Hz.
 /// 
-/// The values in this table are inserted in [`build()`], as non-constant functions can't be used to
-/// initialize statics.
-pub static mut MIDI_TO_HZ: [f64; 128] = [0.0; 128];
+/// This array is referenced in [`build()`] to ensure its initialization at startup.
+pub static MIDI_TO_HZ: LazyLock<[f64; 128]> = LazyLock::new(|| {
+    array::from_fn(|i| {
+        let val = f64::powf(2.0, (i as f64 - 69.0) / 12.0);
+        440.0 * val
+    })
+});
+
+/// The amount of audio samples played per second by the audio device. This value is set in [`run()`]
+/// after the audio device has been detected and connected to.
+pub static mut SAMPLE_RATE: f64 = 48000.0;
 
 /// A wrapper for `cpal::Stream` to force it to implement the `Send` trait.
 /// 
@@ -32,7 +44,7 @@ unsafe impl Send for StreamWrapper { }
 
 /// Connects to the audio device and begins running the audio stream task.
 /// 
-/// This function also calculates the values of [`MIDI_TO_HZ`] and determines the sample format of
+/// This function also calls the initialization of [`MIDI_TO_HZ`] and determines the sample format of
 /// the audio device to be used as the type of [`run()`], which this function `await`s.
 pub async fn build(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
     let host = cpal::default_host();
@@ -44,12 +56,7 @@ pub async fn build(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
     let config = device.default_output_config()?;
     // println!("Output config: {:?}", config);
 
-    unsafe {
-        MIDI_TO_HZ = array::from_fn(|i| {
-            let val = f64::powf(2.0, (i as f64 - 69.0) / 12.0);
-            440.0 * val
-        });
-    }
+    let _ = &*MIDI_TO_HZ;
 
     match config.sample_format() {
         cpal::SampleFormat::I8 => run::<i8>(&device, &config.into(), tx).await?,
@@ -76,9 +83,9 @@ where
     T: SizedSample + FromSample<f64> + Display,
 {
     unsafe {
-        super::SAMPLE_RATE = config.sample_rate.0 as f64;
-        osc::init_tables();
+        SAMPLE_RATE = config.sample_rate.0 as f64;
     }
+    osc::init_tables();
     let channels = config.channels as usize;
 
     // initialize oscillators
@@ -146,7 +153,7 @@ where
                 Message::MixerMode(mode) => {
                     mixer.lock().unwrap().set_mode(mode);
                 }
-                Message::NoteOn{pitch, velocity: _} => {
+                Message::NoteOn{pitch, _velocity} => {
                     oscs.iter().for_each(|osc| {
                         let mut lock = osc.lock().unwrap();
                         if lock.get_mode() == OscMode::MIDI {

@@ -102,7 +102,7 @@ impl Oscillator {
                 self.phase += 1.0;
             } else {
                 self.phase +=
-                    frequency * table_length / crate::SAMPLE_RATE;
+                    frequency * table_length / synth::SAMPLE_RATE;
             }
             if self.phase >= table_length as f64 {
                 self.phase -= table_length as f64;
@@ -165,13 +165,11 @@ impl Oscillator {
         let mut pitch = pitch as i32 + self.pitch_offset.coarse;
         pitch = pitch.min(127).max(0);
 
-        unsafe {
             if self.pitch_offset.fine == 0.0 {
                 synth::MIDI_TO_HZ[pitch as usize]
             } else {
                 440.0 * f64::powf(2.0, (pitch as f64 + self.pitch_offset.fine - 69.0) / 12.0)
             }
-        }
     }
 
     /// Sets the detune value `self.pitch_offset.coarse` to `coarse`, constraining it to the range

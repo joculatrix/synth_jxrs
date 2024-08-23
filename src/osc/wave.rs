@@ -56,14 +56,12 @@ impl Waveform {
     pub fn get_sample(&self, phase: f64) -> f64 {
         let i = phase as usize;
 
-        unsafe {
-            match self {
-                Waveform::Saw => super::SAW_TABLE[i],
-                Waveform::Sine => super::SINE_TABLE[i],
-                Waveform::Square => super::SQUARE_TABLE[i],
-                Waveform::Triangle => super::TRI_TABLE[i],
-                _ => panic!(), // this function shouldn't get called by noise oscillators -- see Oscillator::calc()
-            }
-        } 
+        match self {
+            Waveform::Saw => super::SAW_TABLE[i],
+            Waveform::Sine => super::SINE_TABLE[i],
+            Waveform::Square => super::SQUARE_TABLE[i],
+            Waveform::Triangle => super::TRI_TABLE[i],
+            _ => panic!(), // this function shouldn't get called by noise oscillators -- see Oscillator::calc()
+        }
     }
 }
