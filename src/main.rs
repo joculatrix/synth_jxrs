@@ -3,16 +3,12 @@ use std::{
     f64::consts::PI,
     sync::{Arc, Mutex},
 };
-use osc::oscillator::Oscillator;
 use tokio::sync::broadcast::{self};
 
 // modules:
-mod amp;
 mod app;
 mod message;
 mod midi;
-mod mixer;
-mod osc;
 mod synth;
 
 #[tokio::main(flavor = "multi_thread")]

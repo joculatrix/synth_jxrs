@@ -1,4 +1,4 @@
-use crate::amp::Amplifier;
+use super::amp::Amplifier;
 
 /// Struct for managing over-arching volume and mixing for the synthesizer.
 pub struct Mixer {

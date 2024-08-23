@@ -1,8 +1,6 @@
 use std::{collections::BTreeSet, time::Instant};
 
-/// Manages the amplitude, both statically and based on MIDI signals and time, of an [`Oscillator`].
-/// 
-/// [`Oscillator`]: crate::osc::oscillator::Oscillator
+/// Manages the amplitude/volume of the synthesizer, when set to base amplitude on MIDI input.
 pub struct Amplifier {
     /// The set of MIDI pitches `[0..127]` currently held by the MIDI input device.
     active_notes: BTreeSet<u8>,

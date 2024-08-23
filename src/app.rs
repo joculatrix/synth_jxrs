@@ -1,7 +1,10 @@
 use std::error::Error;
 
 use tokio::sync::broadcast::Sender;
-use crate::{message::Message, mixer::SynthMode, osc::{self, oscillator}};
+use crate::{
+    message::Message,
+    synth::{mixer::SynthMode, osc::{self, oscillator}}
+};
 
 // rust analyzer might flag the following macro as an error, but the project should still compile successfully:
 slint::include_modules!();

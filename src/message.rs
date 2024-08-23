@@ -1,13 +1,15 @@
 #[allow(unused)]
 use crate::{
-    amp::{Amplifier, Envelope},
     app,
     midi,
-    mixer::{self, Mixer},
-    osc::{
-        oscillator::{self, Oscillator},
-        wave::Waveform
-    },
+    synth::{
+        amp::{Amplifier, Envelope},
+        mixer::{self, Mixer},
+        osc::{
+            oscillator::{self, Oscillator},
+            wave::Waveform,
+        },
+    }
 };
 
 /// The message type sent between tasks by the application's broadcast channel.
@@ -44,7 +46,7 @@ pub enum Message {
 
     /// Sent by the UI in [`app`] to modify the master gain of the [`Mixer`].
     /// 
-    /// [`Mixer`]:  crate::mixer::Mixer
+    /// [`Mixer`]:  crate::synth::mixer::Mixer
     Master(f64),
 
     /// Sent by the UI in [`app`] to modify the `mode` value of the [`Mixer`].

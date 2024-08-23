@@ -68,15 +68,13 @@ impl Oscillator {
         }
     }
 
-    /// Calculates the current output sample for `self`.
+    /// Calculates the current output sample for `self` in the form of an amplitude value `[-1.0..1.0]`.
     /// 
-    /// If `self.bypass` is set to true, this value will be `0.0`. Otherwise, the `Oscillator` will look up
-    /// the appropriate sample value for its [`Waveform`], increment its `phase`, and then apply any multipliers
-    /// offered by its [`Amplifier`]. If `self` is in [`Constant`] mode, this will only be the overall `gain` value,
-    /// whereas in [`MIDI`] mode, [`Amplifier::calc()`] is called to shape the amplitude based on MIDI information.
+    /// If `self.bypass` is set to true, this value will be `0.0`. Otherwise, the `Oscillator` will apply any FM inputs,
+    /// look up the appropriate sample value for its [`Waveform`], and increment its `phase`.
     /// 
     /// [`Constant`]:   OscMode::Constant
-    /// [`MIDI`]:   OscMode::MIDI
+    /// [`MIDI`]:          OscMode::MIDI
     pub fn calc(&mut self) -> f64 {
         if self.bypass {
             return 0.0;

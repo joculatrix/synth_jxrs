@@ -4,12 +4,16 @@ use std::{
     sync::LazyLock,
 };
 use crate::*;
-
-use cpal::{traits::{DeviceTrait, HostTrait, StreamTrait}, FromSample, SizedSample, Stream};
 use message::Message;
 use mixer::Mixer;
-use osc::oscillator::OscMode;
+use osc::oscillator::{OscMode, Oscillator};
 use tokio::sync::broadcast::Sender;
+
+use cpal::{traits::{DeviceTrait, HostTrait, StreamTrait}, FromSample, SizedSample, Stream};
+
+pub mod amp;
+pub mod mixer;
+pub mod osc;
 
 /// The number of [`Oscillator`]s the synthesizer should have. Currently, this is a convenience identifier
 /// for a value that shouldn't be edited. In order for this number to have the power to quickly alter the
@@ -29,7 +33,7 @@ pub static MIDI_TO_HZ: LazyLock<[f64; 128]> = LazyLock::new(|| {
 
 /// The amount of audio samples played per second by the audio device. This value is set in [`run()`]
 /// after the audio device has been detected and connected to.
-pub static mut SAMPLE_RATE: f64 = 48000.0;
+static mut SAMPLE_RATE: f64 = 48000.0;
 
 /// A wrapper for `cpal::Stream` to force it to implement the `Send` trait.
 /// 
