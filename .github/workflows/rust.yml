@@ -11,9 +11,15 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-
+    
     steps:
     - uses: actions/checkout@v4
+    - name: Rust toolchain
+      run: rustup toolchain install stable --profile minimal
+    - name: Install alsa
+      run: sudo apt-get install -yqq alsa
+    - name: Set PKG_CONFIG_PATH
+      run: echo "PKG_CONFIG_PATH='$(dpkg -L alsa | egrep alsa.pc -m 1 -q | sed -n 's/\/alsa/pc//'):$PKG_CONFIG_PATH'" >> "$GITHUB_ENV"
     - name: Build
       run: cargo build --verbose
     - name: Run tests
