@@ -321,7 +321,7 @@ impl PitchController {
     /// then combined with `lsb` via bitwise OR.
     fn pitch_bend(&mut self, lsb: u8, msb: u8) {
         let mut pitch_bend: u16 = (msb as u16) << 7;
-        pitch_bend |= (lsb as u16);
+        pitch_bend |= lsb as u16;
         self.pitch_bend = (pitch_bend as f64 - 8192_f64) / 8191_f64;
     }
 
