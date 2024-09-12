@@ -6,7 +6,7 @@ use std::{
 use crate::*;
 use message::Message;
 use mixer::Mixer;
-use osc::oscillator::{OscMode, Oscillator};
+use osc::oscillator::{PitchMode, Oscillator};
 use tokio::sync::broadcast::Sender;
 
 use cpal::{traits::{DeviceTrait, HostTrait, StreamTrait}, FromSample, SizedSample, Stream};
@@ -134,13 +134,13 @@ where
                     oscs[i].lock().unwrap().bypass = bypass;
                 }
                 Message::Coarse(i, coarse) => {
-                    oscs[i].lock().unwrap().set_coarse_detune(coarse);
+                    oscs[i].lock().unwrap().detune_coarse(coarse);
                 }
                 Message::Decay(decay) => {
                     mixer.lock().unwrap().amp.adsr.decay = decay;
                 }
                 Message::Fine(i, fine) => {
-                    oscs[i].lock().unwrap().set_fine_detune(fine);
+                    oscs[i].lock().unwrap().detune_fine(fine);
                 }
                 Message::FmRange(i, range) => {
                     oscs[i].lock().unwrap().set_fm_range(range);
@@ -160,7 +160,7 @@ where
                 Message::NoteOn{pitch, _velocity} => {
                     oscs.iter().for_each(|osc| {
                         let mut lock = osc.lock().unwrap();
-                        if lock.get_mode() == OscMode::MIDI {
+                        if lock.get_mode() == PitchMode::MIDI {
                             lock.note_on(pitch);
                         }
                     });
@@ -169,18 +169,18 @@ where
                 Message::NoteOff{pitch} => {
                     oscs.iter().for_each(|osc| {
                         let mut lock = osc.lock().unwrap();
-                        if lock.get_mode() == OscMode::MIDI {
+                        if lock.get_mode() == PitchMode::MIDI {
                             lock.note_off(pitch);
                         }
                     });
                     mixer.lock().unwrap().amp.note_off(pitch);
                 }
-                Message::OscMode(i, mode) => {
+                Message::PitchMode(i, mode) => {
                     oscs[i].lock().unwrap().set_mode(mode);
                 }
                 Message::Output(i, mode) => {
                     let mut lock = oscs[i].lock().unwrap();
-                    match lock.get_output() {
+                    match lock.get_output_mode() {
                         osc::oscillator::OutputMode::Master => (),
                         osc::oscillator::OutputMode::Osc(j) => {
                             oscs[j].lock().unwrap().remove_fm_in(i);
@@ -229,7 +229,7 @@ where
 
         for i in 0..NUM_OSCS {
             let mut lock = oscs[i].lock().unwrap();
-            match lock.get_output() {
+            match lock.get_output_mode() {
                 osc::oscillator::OutputMode::Master => {
                     amps[i] = lock.calc();
                 }

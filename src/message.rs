@@ -56,13 +56,13 @@ pub enum Message {
     NoteOn{pitch: u8, _velocity: u8},
 
     /// Sent by [`midi`] to signal a MIDI note-off.
-    NoteOff{pitch: u8},
-
-    /// Sent by the UI in [`app`] to modify the `mode` value of an [`Oscillator`].
-    OscMode(usize, oscillator::OscMode), 
+    NoteOff{pitch: u8}, 
 
     /// Sent by the UI in [`app`] to modify where an [`Oscillator`]'s signal outputs to.
     Output(usize, oscillator::OutputMode),
+
+    /// Sent by the UI in [`app`] to modify the `mode` value of an [`Oscillator`].
+    PitchMode(usize, oscillator::PitchMode),
 
     /// Sent by the UI in [`app`] to modify the `release` value of the [`Mixer`]'s [`Envelope`].
     Release(f64),
