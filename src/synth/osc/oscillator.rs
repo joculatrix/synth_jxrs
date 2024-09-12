@@ -270,7 +270,7 @@ impl PitchController {
     /// Calculates the frequency for the current output sample.
     /// 
     /// Called from [`Oscillator::calc()`]. 
-    fn get_freq(&mut self) -> f64 {
+    fn get_freq(&self) -> f64 {
         if self.mode == PitchMode::MIDI {
             let pitch = if !self.midi_notes.is_empty() {
                 self.midi_notes[0] as i8 + self.offset_coarse
@@ -329,5 +329,32 @@ impl PitchController {
 
     fn set_mode(&mut self, mode: PitchMode) {
         self.mode = mode;
+    }
+}
+
+#[cfg(test)]
+mod pitch_control_tests {
+    use super::*;
+
+    // Checks that the `PitchController` (in `PitchMode::MIDI` by default) correctly translates a
+    // default `last_pitch` of 69 to a frequency of 440Hz.
+    #[test]
+    fn first_freq_is_440() {
+        let pitch_controller = PitchController::new();
+        let freq = pitch_controller.get_freq();
+
+        assert_eq!(freq, 440.0)
+    }
+
+    #[test]
+    fn constant_mode_ignores_pitch_detune() {
+        let mut pitch_controller = PitchController::new();
+        pitch_controller.set_coarse(12);
+        pitch_controller.set_fine(-0.25);
+        pitch_controller.set_mode(PitchMode::Constant);
+
+        let freq = pitch_controller.get_freq();
+
+        assert_eq!(freq, 440.0)
     }
 }
