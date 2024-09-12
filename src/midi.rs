@@ -100,7 +100,9 @@ fn parse_message(msg: &[u8], tx: &mut Sender<Message>) -> Result<(), Box<dyn Err
         MidiMessage::ControlChange(_, _) => {}
         MidiMessage::ProgramChange(_, _) => {}
         MidiMessage::ChannelPressure(_, _) => {}
-        MidiMessage::PitchBend(_, _, _) => {}
+        MidiMessage::PitchBend(_channel, lsb, msb) => {
+            tx.send(Message::PitchBend{ lsb, msb })?;
+        }
         MidiMessage::SysEx(_) => {}
     }
     Ok(())

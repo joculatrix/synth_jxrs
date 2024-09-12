@@ -175,6 +175,12 @@ where
                     });
                     mixer.lock().unwrap().amp.note_off(pitch);
                 }
+                Message::PitchBend{lsb, msb} => {
+                    oscs.iter().for_each(|osc| {
+                        let mut lock = osc.lock().unwrap();
+                        lock.pitch_bend(lsb, msb);
+                    });
+                }
                 Message::PitchMode(i, mode) => {
                     oscs[i].lock().unwrap().set_mode(mode);
                 }
