@@ -61,6 +61,9 @@ pub enum Message {
     /// Sent by the UI in [`app`] to modify where an [`Oscillator`]'s signal outputs to.
     Output(usize, oscillator::OutputMode),
 
+    /// Sent by [`midi`] to send a pitch bend to [`Oscillator`]s.
+    PitchBend{lsb: u8, msb: u8},
+
     /// Sent by the UI in [`app`] to modify the `mode` value of an [`Oscillator`].
     PitchMode(usize, oscillator::PitchMode),
 

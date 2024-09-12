@@ -157,6 +157,11 @@ impl Oscillator {
         }
     }
 
+    /// Passes a MIDI PitchBend message along to `self.pitch_controller`.
+    pub fn pitch_bend(&mut self, lsb: u8, msb: u8) {
+        self.pitch_controller.pitch_bend(lsb, msb);
+    }
+
     /// Removes the `Oscillator` at `index` from `self.fm_in`.
     pub fn remove_fm_in(&mut self, index: usize) {
         self.fm_in.remove(&index);
@@ -243,11 +248,8 @@ struct PitchController {
     offset_coarse: i8,
     /// An amount of cents in the range `[-0.5..0.5]` by which to adjust incoming MIDI pitches.
     offset_fine: f64,
-    /// The amount of pitch bend, controlled by a MIDI controller, in the range `[0..16_383]`.
-    /// 
-    /// A value of `0` is a maximum downward bend, `16_383` is a maximum upward bend, and the default
-    /// no-bend value is `8192`.
-    pitch_bend: u16,
+    /// The amount of pitch bend, controlled by a MIDI controller, in the range `[-1.0..1.0]`.
+    pitch_bend: f64,
 }
 
 impl PitchController {
@@ -263,7 +265,7 @@ impl PitchController {
             mode: PitchMode::MIDI,
             offset_coarse: 0,
             offset_fine: 0.0,
-            pitch_bend: 8192,
+            pitch_bend: 0.0,
         }
     }
 
@@ -271,7 +273,7 @@ impl PitchController {
     /// 
     /// Called from [`Oscillator::calc()`]. 
     fn get_freq(&self) -> f64 {
-        if self.mode == PitchMode::MIDI {
+        let freq = if self.mode == PitchMode::MIDI {
             let pitch = if !self.midi_notes.is_empty() {
                 self.midi_notes[0] as i8 + self.offset_coarse
             } else {
@@ -285,7 +287,9 @@ impl PitchController {
             }
         } else {
             self.base_frequency
-        }
+        };
+
+        freq * f64::powf(2_f64, self.pitch_bend * 2_f64 / 12_f64)
     }
 
     /// Sends the MIDI NoteOn signal to the `PitchController`.
@@ -309,6 +313,16 @@ impl PitchController {
         } else {
             self.last_pitch = pitch;
         }
+    }
+
+    /// Sets `self.pitch_bend` value.
+    /// 
+    /// To convert the MIDI bytes to one number, `msb` is shifted 7 bits to the left,
+    /// then combined with `lsb` via bitwise OR.
+    fn pitch_bend(&mut self, lsb: u8, msb: u8) {
+        let mut pitch_bend: u16 = (msb as u16) << 7;
+        pitch_bend |= (lsb as u16);
+        self.pitch_bend = (pitch_bend as f64 - 8192_f64) / 8191_f64;
     }
 
     /// Restricts `coarse` to the range `[-12..12]`, then replaces `self.offset_coarse`.
@@ -356,5 +370,23 @@ mod pitch_control_tests {
         let freq = pitch_controller.get_freq();
 
         assert_eq!(freq, 440.0)
+    }
+
+    #[test]
+    fn byte_conversion_is_correct() {
+        let mut pitch_controller = PitchController::new();
+
+        // Should be a value of 8192/no bend, according to MIDI protocol:
+        pitch_controller.pitch_bend(0, 64);
+        let res = pitch_controller.pitch_bend;
+        assert_eq!(res, 0_f64);
+
+        pitch_controller.pitch_bend(1, 0);
+        let res = pitch_controller.pitch_bend;
+        assert_eq!(res, -1_f64);
+
+        pitch_controller.pitch_bend(127, 127);
+        let res = pitch_controller.pitch_bend;
+        assert_eq!(res, 1_f64);
     }
 }
