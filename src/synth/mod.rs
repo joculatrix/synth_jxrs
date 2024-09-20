@@ -180,25 +180,25 @@ fn parse_message(msg: Message, mixer: Arc<Mutex<Mixer>>, oscs: Arc<Vec<Mutex<Osc
         Message::Attack(attack) => {
             mixer.lock().unwrap().amp.adsr.attack = attack;
         }
-        Message::Bypass(i, bypass) => {
+        Message::Bypass{oscillator: i, bypass} => {
             oscs[i].lock().unwrap().bypass = bypass;
         }
-        Message::Coarse(i, coarse) => {
+        Message::Coarse{oscillator: i, coarse} => {
             oscs[i].lock().unwrap().detune_coarse(coarse);
         }
         Message::Decay(decay) => {
             mixer.lock().unwrap().amp.adsr.decay = decay;
         }
-        Message::Fine(i, fine) => {
+        Message::Fine{oscillator: i, fine} => {
             oscs[i].lock().unwrap().detune_fine(fine);
         }
-        Message::FmRange(i, range) => {
+        Message::FmRange{oscillator: i, range} => {
             oscs[i].lock().unwrap().set_fm_range(range);
         }
-        Message::Freq(i, freq) => {
+        Message::Freq{oscillator: i, freq} => {
             oscs[i].lock().unwrap().set_freq(freq);
         }
-        Message::Gain(i, gain) => {
+        Message::Gain{oscillator: i, gain} => {
             oscs[i].lock().unwrap().set_gain(gain);
         }
         Message::Master(gain) => {
@@ -231,10 +231,10 @@ fn parse_message(msg: Message, mixer: Arc<Mutex<Mixer>>, oscs: Arc<Vec<Mutex<Osc
                 lock.pitch_bend(lsb, msb);
             });
         }
-        Message::PitchMode(i, mode) => {
+        Message::PitchMode{oscillator: i, mode} => {
             oscs[i].lock().unwrap().set_mode(mode);
         }
-        Message::Output(i, mode) => {
+        Message::Output{oscillator: i, mode } => {
             let mut lock = oscs[i].lock().unwrap();
             match lock.get_output_mode() {
                 osc::oscillator::OutputMode::Master => (),
@@ -258,7 +258,7 @@ fn parse_message(msg: Message, mixer: Arc<Mutex<Mixer>>, oscs: Arc<Vec<Mutex<Osc
         Message::Sustain(sustain) => {
             mixer.lock().unwrap().amp.adsr.set_sustain(sustain);
         }
-        Message::Waveform(i, waveform) => {
+        Message::Waveform{oscillator: i, waveform} => {
             oscs[i].lock().unwrap().set_waveform(waveform);
         }
         _ => ()
