@@ -71,6 +71,7 @@ impl Oscillator {
 
         let mut frequency = self.pitch_controller.get_freq();
 
+        // get sample
         let res = if self.waveform == Waveform::Noise {
             Waveform::Noise.calc(0.0, 0.0)
         } else {
@@ -85,11 +86,8 @@ impl Oscillator {
             let table_length = TABLE_LENGTH as f64;
 
             // frequency should not affect white noise
-            if self.waveform == Waveform::Noise {
-                self.phase += 1.0;
-            } else {
-                self.phase +=
-                    frequency * table_length / synth::SAMPLE_RATE;
+            if self.waveform != Waveform::Noise {
+                self.phase += frequency * table_length / synth::SAMPLE_RATE;
             }
             if self.phase >= table_length as f64 {
                 self.phase -= table_length as f64;

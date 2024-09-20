@@ -28,22 +28,40 @@ pub fn run(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
                     1.0 => true,
                     _ => panic!(),
                 };
-                Message::Bypass(index, value)
+                Message::Bypass {
+                    oscillator: index,
+                    bypass: value
+                }
             }
             OscProps::Coarse => unsafe {
-                Message::Coarse(index, value.to_int_unchecked())
+                Message::Coarse {
+                    oscillator: index,
+                    coarse: value.to_int_unchecked()
+                }
             }
             OscProps::Fine => {
-                Message::Fine(index, value.into())
+                Message::Fine {
+                    oscillator: index,
+                    fine: value.into()
+                }
             }
             OscProps::FmRange => unsafe {
-                Message::FmRange(index, value.to_int_unchecked())
+                Message::FmRange {
+                    oscillator: index,
+                    range: value.to_int_unchecked()
+                }
             }
             OscProps::Freq => {
-                Message::Freq(index, value.into())
+                Message::Freq {
+                    oscillator: index,
+                    freq: value.into()
+                }
             }
             OscProps::Gain => {
-                Message::Gain(index, value.into())
+                Message::Gain {
+                    oscillator: index,
+                    gain: value.into()
+                }
             }
             OscProps::Mode => unsafe {
                 let value = match value.to_int_unchecked() {
@@ -51,7 +69,10 @@ pub fn run(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
                     1 => oscillator::PitchMode::Constant,
                     _ => panic!(),
                 };
-                Message::PitchMode(index, value)
+                Message::PitchMode {
+                    oscillator: index,
+                    mode: value
+                }
             }
             OscProps::Output => unsafe {
                 let value = match value.to_int_unchecked() {
@@ -61,7 +82,10 @@ pub fn run(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
                     _ => oscillator::OutputMode::Master,
                 };
 
-                Message::Output(index, value)
+                Message::Output {
+                    oscillator: index,
+                    mode: value
+                }
             }
             OscProps::Waveform => unsafe {
                 let waveform = match value.to_int_unchecked() {
@@ -71,7 +95,10 @@ pub fn run(tx: Sender<Message>) -> Result<(), Box<dyn Error>> {
                     4 => osc::wave::Waveform::Triangle,
                     _ => osc::wave::Waveform::Sine, // just set to Sine if something goes wrong?
                 };
-                Message::Waveform(index, waveform)
+                Message::Waveform {
+                    oscillator: index,
+                    waveform
+                }
             }
         };
 

@@ -24,25 +24,25 @@ pub enum Message {
     Attack(f64),
 
     /// Sent by the UI in [`app`] to modify the `bypass` value of an [`Oscillator`].
-    Bypass(usize, bool),
+    Bypass{oscillator: usize, bypass: bool},
 
     /// Sent by the UI in [`app`] to modify the `coarse` detune value of an [`Oscillator`].
-    Coarse(usize, i32),
+    Coarse{oscillator: usize, coarse: i32},
 
     /// Sent by the UI in [`app`] to modify the `decay` value of the [`Mixer`]'s [`Envelope`].
     Decay(f64),
 
     /// Sent by the UI in [`app`] to modify the `fine` detune value of an [`Oscillator`].
-    Fine(usize, f64),
+    Fine{oscillator: usize, fine: f64},
 
     /// Sent by the UI in [`app`] to modify the `fm_range` of an [`Oscillator`].
-    FmRange(usize, u16),
+    FmRange{oscillator: usize, range: u16},
 
     /// Sent by the UI in [`app`] to modify the `frequency` value of an [`Oscillator`].
-    Freq(usize, f64),
+    Freq{oscillator: usize, freq: f64},
     
     /// Sent by the UI in [`app`] to modify the `gain` value of an [`Oscillator`]'s [`Amplifier`].
-    Gain(usize, f64),
+    Gain{oscillator: usize, gain: f64},
 
     /// Sent by the UI in [`app`] to modify the master gain of the [`Mixer`].
     /// 
@@ -59,22 +59,19 @@ pub enum Message {
     NoteOff{pitch: u8}, 
 
     /// Sent by the UI in [`app`] to modify where an [`Oscillator`]'s signal outputs to.
-    Output(usize, oscillator::OutputMode),
+    Output{oscillator: usize, mode: oscillator::OutputMode},
 
     /// Sent by [`midi`] to send a pitch bend to [`Oscillator`]s.
     PitchBend{lsb: u8, msb: u8},
 
     /// Sent by the UI in [`app`] to modify the `mode` value of an [`Oscillator`].
-    PitchMode(usize, oscillator::PitchMode),
+    PitchMode{oscillator: usize, mode: oscillator::PitchMode},
 
     /// Sent by the UI in [`app`] to modify the `release` value of the [`Mixer`]'s [`Envelope`].
     Release(f64),
 
     /// Sent by the UI in [`app`] to notify [`midi`] to retry the connection to the MIDI device.
     ResetMIDI(),
-
-    /// Currently unused. Previously used to send samples to the UI to display an oscilloscope.
-    _Sample(usize, f64),
 
     /// Sent by the UI in [`app`] to modify the `sustain` value of the [`Mixer`]'s [`Envelope`].
     Sustain(f64),
@@ -83,5 +80,5 @@ pub enum Message {
     Quit(),
 
     /// Sent by the UI in [`app`] to modify the [`Waveform`] of an [`Oscillator`].
-    Waveform(usize, Waveform),
+    Waveform{oscillator: usize, waveform: Waveform},
 }
