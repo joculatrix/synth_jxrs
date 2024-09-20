@@ -67,6 +67,12 @@ pub enum Message {
     /// Sent by the UI in [`app`] to modify the `mode` value of an [`Oscillator`].
     PitchMode{oscillator: usize, mode: oscillator::PitchMode},
 
+    /// Sent by [`midi`] to send a pitch bend to [`Oscillator`]s.
+    PitchBend{lsb: u8, msb: u8},
+
+    /// Sent by the UI in [`app`] to modify the `mode` value of an [`Oscillator`].
+    PitchMode(usize, oscillator::PitchMode),
+
     /// Sent by the UI in [`app`] to modify the `release` value of the [`Mixer`]'s [`Envelope`].
     Release(f64),
 
