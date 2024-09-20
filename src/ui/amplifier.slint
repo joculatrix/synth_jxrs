@@ -47,6 +47,7 @@ export component Amplifier inherits Rectangle {
                 double-clicked => {
                     self.value = 0;
                     self.progress = (self.value + 60) / 60;
+                    root.changed(AmpProps.gain, self.value);
                 }
                 text_input_accepted(s) => {
                     self.value = max(-60, min(0, s.to-float()));
@@ -100,6 +101,7 @@ export component Amplifier inherits Rectangle {
                     double-clicked => {
                         self.value = 0;
                         self.progress = self.value / 20;
+                        root.changed(AmpProps.attack, attack_knob.value);
                     }
                     text_input_accepted(s) => {
                         self.value = max(0, min(20, s.to-float()));
@@ -121,6 +123,7 @@ export component Amplifier inherits Rectangle {
                     double_clicked => {
                         self.value = 1;
                         self.progress = self.value;
+                        root.changed(AmpProps.sustain, self.value);
                     }
                     text_input_accepted(s) => {
                         self.value = max(0, min(1, s.to-float()));
@@ -147,6 +150,7 @@ export component Amplifier inherits Rectangle {
                     double-clicked => {
                         self.value = 0;
                         self.progress = self.value / 20;
+                        root.changed(AmpProps.decay, self.value);
                     }
                     text_input_accepted(s) => {
                         self.value = max(0, min(20, s.to-float()));
@@ -168,6 +172,7 @@ export component Amplifier inherits Rectangle {
                     double_clicked => {
                         self.value = 0;
                         self.progress = self.value / 20;
+                        root.changed(AmpProps.release, self.value);
                     }
                     text_input_accepted(s) => {
                         self.value = max(0, min(20, s.to-float()));

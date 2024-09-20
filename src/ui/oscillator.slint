@@ -134,6 +134,7 @@ export component Oscillator inherits Rectangle {
                                 double-clicked => {
                                     self.value = 440;
                                     self.progress = ((self.value) - 10.0) * 0.0005;
+                                    root.changed(OscProps.freq, self.value);
                                 }
                                 text_input_accepted(s) => {
                                     self.value = max(10, min(2010, s.to-float()));
@@ -194,6 +195,7 @@ export component Oscillator inherits Rectangle {
                         double-clicked => {
                             self.value = 0;
                             self.progress = (self.value + 60) / 60;
+                            root.changed(OscProps.gain, self.value);
                         }
                         text_input_accepted(s) => {
                             self.value = max(-60, min(0, s.to-float()));
@@ -217,6 +219,7 @@ export component Oscillator inherits Rectangle {
                         double-clicked => {
                             self.value = 100;
                             self.progress = self.value / 1000;
+                            root.changed(OscProps.fm_range, self.value);
                         }
                         text_input_accepted(s) => {
                             self.value = max(0, min(1000, s.to-float()));
